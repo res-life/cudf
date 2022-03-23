@@ -219,15 +219,21 @@ struct ParquetWriterTimestampTypeTest : public ParquetWriterTest {
   auto type() { return cudf::data_type{cudf::type_to_id<T>()}; }
 };
 
+// Typed test fixture for all types
+template <typename T>
+struct ParquetWriterSchemaTest : public ParquetWriterTest {
+  auto type() { return cudf::data_type{cudf::type_to_id<T>()}; }
+};
+
 // Declare typed test cases
 // TODO: Replace with `NumericTypes` when unsigned support is added. Issue #5352
 using SupportedTypes = cudf::test::Types<int8_t, int16_t, int32_t, int64_t, bool, float, double>;
 TYPED_TEST_SUITE(ParquetWriterNumericTypeTest, SupportedTypes);
-using SupportedChronoTypes = cudf::test::Concat<cudf::test::ChronoTypes, cudf::test::DurationTypes>;
-TYPED_TEST_SUITE(ParquetWriterChronoTypeTest, SupportedChronoTypes);
+TYPED_TEST_SUITE(ParquetWriterChronoTypeTest, cudf::test::ChronoTypes);
 using SupportedTimestampTypes =
   cudf::test::Types<cudf::timestamp_ms, cudf::timestamp_us, cudf::timestamp_ns>;
 TYPED_TEST_SUITE(ParquetWriterTimestampTypeTest, SupportedTimestampTypes);
+TYPED_TEST_SUITE(ParquetWriterSchemaTest, cudf::test::AllTypes);
 
 // Base test fixture for chunked writer tests
 struct ParquetChunkedWriterTest : public cudf::test::BaseFixture {
@@ -3198,6 +3204,27 @@ TEST_F(ParquetWriterTest, RowGroupSizeInvalid)
   EXPECT_THROW(cudf_io::chunked_parquet_writer_options::builder(cudf_io::sink_info(&out_buffer))
                  .row_group_size_bytes(511 << 10),
                cudf::logic_error);
+}
+
+TYPED_TEST(ParquetWriterSchemaTest, FieldID)
+{
+  column_wrapper<TypeParam> col;
+  std::vector<std::unique_ptr<column>> cols;
+  cols.push_back(col.release());
+  auto expected = std::make_unique<table>(std::move(cols));
+
+  cudf_io::table_input_metadata expected_metadata(*expected);
+  auto constexpr gold = 825;
+  expected_metadata.column_metadata[0].set_parquet_field_id(gold);
+
+  auto filepath = temp_env->get_temp_filepath("FieldID.parquet");
+  cudf_io::parquet_writer_options out_opts =
+    cudf_io::parquet_writer_options::builder(cudf_io::sink_info{filepath}, expected->view())
+      .metadata(&expected_metadata);
+
+  auto got_metadata = out_opts.get_metadata();
+  EXPECT_TRUE(got_metadata->column_metadata[0].is_parquet_field_id_set());
+  EXPECT_EQ(gold, got_metadata->column_metadata[0].get_parquet_field_id());
 }
 
 CUDF_TEST_PROGRAM_MAIN()
