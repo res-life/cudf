@@ -132,6 +132,35 @@ public class TableTest extends CudfTestBase {
   }
 
   @Test
+  void testConditionalLeftSemiJoinGatherMap_equals_and_greater() {
+    // left.c0 == right.c0 && left.c1 > right.c1
+    BinaryOperation expr1 = new BinaryOperation(BinaryOperator.EQUAL,
+        new ColumnReference(0, TableReference.LEFT),
+        new ColumnReference(0, TableReference.RIGHT));
+    BinaryOperation expr2 = new BinaryOperation(BinaryOperator.GREATER,
+        new ColumnReference(1, TableReference.LEFT),
+        new ColumnReference(1, TableReference.RIGHT));
+    BinaryOperation expr = new BinaryOperation(BinaryOperator.LOGICAL_AND, expr1, expr2);
+
+    try (Table left = new Table.TestBuilder()
+        .column(2, 2, 1, 1)
+        .column(1, 2, 3, 4).build();
+
+         Table right = new Table.TestBuilder()
+             .column(1, 1, 1, 1, 2, 2, 2, 2)
+             .column(1, 2, 3, 4, 1, 2, 3, 4)
+             .build();
+
+         Table expected = new Table.TestBuilder()
+             .column(1, 2, 3)
+             .build();
+         CompiledExpression condition = expr.compile();
+         GatherMap map = left.conditionalLeftSemiJoinGatherMap(right, condition)) {
+      verifySemiJoinGatherMap(map, expected);
+    }
+  }
+
+  @Test
   void testMergeSimple() {
     try (Table table1 = new Table.TestBuilder()
             .column(5, 3, 3, 1, 1)
