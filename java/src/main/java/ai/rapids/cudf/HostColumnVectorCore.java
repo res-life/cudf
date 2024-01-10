@@ -611,6 +611,11 @@ public class HostColumnVectorCore implements AutoCloseable {
           if (valid != null) {
             valid.close();
           }
+          if (childrenOffHeepStats != null) {
+            for (OffHeapState childOffHeapStat: childrenOffHeepStats) {
+              childOffHeapStat.cleanImpl(logErrorIfNotClean);
+            }
+          }
         } finally {
           // Always mark the resource as freed even if an exception is thrown.
           // We cannot know how far it progressed before the exception, and
@@ -618,6 +623,7 @@ public class HostColumnVectorCore implements AutoCloseable {
           data = null;
           valid = null;
           offsets = null;
+          childrenOffHeepStats = null;
         }
         neededCleanup = true;
       }
