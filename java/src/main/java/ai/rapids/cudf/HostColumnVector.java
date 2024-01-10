@@ -138,6 +138,7 @@ public final class HostColumnVector extends HostColumnVectorCore {
    * data may not have a clear lifecycle thanks to java and GC. This API informs the leak
    * tracking code that this is expected for this column, and big scary warnings should
    * not be printed when this happens.
+   * Note: For this HostColumnVector, it also suppresses warnings of children vectors
    */
   public void noWarnLeakExpected() {
     offHeap.noWarnLeakExpected();

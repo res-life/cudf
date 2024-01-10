@@ -47,7 +47,7 @@ public class HostColumnVectorCore implements AutoCloseable {
   public HostColumnVectorCore(DType type, long rows,
                               Optional<Long> nullCount, HostMemoryBuffer data, HostMemoryBuffer validity,
                               HostMemoryBuffer offsets, List<HostColumnVectorCore> nestedChildren) {
-    this.offHeap = new OffHeapState(data, validity,  offsets);
+    this.offHeap = new OffHeapState(data, validity,  offsets, nestedChildren);
     MemoryCleaner.register(this, offHeap);
     this.type = type;
     this.rows = rows;
@@ -581,11 +581,20 @@ public class HostColumnVectorCore implements AutoCloseable {
     public HostMemoryBuffer data;
     public HostMemoryBuffer valid = null;
     public HostMemoryBuffer offsets = null;
+    // Only used by `noWarnLeakExpected`
+    public List<OffHeapState> childrenOffHeepStats = null;
 
-    OffHeapState(HostMemoryBuffer data, HostMemoryBuffer valid, HostMemoryBuffer offsets) {
+    OffHeapState(HostMemoryBuffer data, HostMemoryBuffer valid, HostMemoryBuffer offsets,
+        List<HostColumnVectorCore> children) {
       this.data = data;
       this.valid = valid;
       this.offsets = offsets;
+      if (children != null) {
+        childrenOffHeepStats = new ArrayList<>(children.size());
+        for (HostColumnVectorCore child : children) {
+          childrenOffHeepStats.add(child.offHeap);
+        }
+      }
     }
 
     @Override
@@ -630,6 +639,11 @@ public class HostColumnVectorCore implements AutoCloseable {
       }
       if (offsets != null) {
         offsets.noWarnLeakExpected();
+      }
+      if (childrenOffHeepStats != null) {
+        for (OffHeapState childOffHeapStat: childrenOffHeepStats) {
+          childOffHeapStat.noWarnLeakExpected();
+        }
       }
     }
 
