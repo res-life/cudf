@@ -15,7 +15,10 @@
  */
 #pragma once
 
+#include "io/utilities/parsing_utils.cuh"
+
 #include <cudf/json/json.hpp>
+#include <cudf/strings/detail/utf8.hpp>
 #include <cudf/types.hpp>
 
 namespace cudf::json::detail {
@@ -907,7 +910,10 @@ class json_parser {
    */
   CUDF_HOST_DEVICE bool try_skip_children()
   {
-    if (curr_token == json_token::ERROR) { return false; }
+    if (curr_token == json_token::ERROR || curr_token == json_token::INIT ||
+        curr_token == json_token::SUCCESS) {
+      return false;
+    }
 
     if (curr_token != json_token::START_OBJECT && curr_token != json_token::START_ARRAY) {
       return true;
@@ -930,7 +936,7 @@ class json_parser {
    * try to copy current text
    * @return false if current token is SUCCESS/ERROR/INIT, true otherwise
    */
-  CUDF_HOST_DEVICE bool try_copy_text(char* destination)
+  CUDF_HOST_DEVICE bool try_copy_raw_text(char* destination)
   {
     switch (curr_token) {
       case json_token::VALUE_STRING:
@@ -984,6 +990,18 @@ class json_parser {
     }
   }
 
+  /**
+   * reset the parser
+   */
+  CUDF_HOST_DEVICE bool reset()
+  {
+    curr_pos        = json_start_pos;
+    curr_token      = json_token::INIT;
+    stack_size      = 0;
+    token_start_pos = json_start_pos;
+    token_str_len   = 0;
+  }
+
  private:
   cudf::get_json_object_options const& options;
   char const* const json_start_pos{nullptr};
@@ -1003,7 +1021,8 @@ class json_parser {
   char const* token_start_pos;
   cudf::size_type token_str_len;
 
-  cudf::io::parse_options_view parse_options{',', '\n', '\"', '.'};
+  // used by parser 4 HEX chars to unsigned int value
+  cudf::io::parse_options_view const parse_options{',', '\n', '\"', '.'};
 };
 
 }  // namespace cudf::json::detail

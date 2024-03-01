@@ -19,6 +19,8 @@
 #include <cudf/json/detail/json_parser.hpp>
 #include <cudf/json/json.hpp>
 
+#include <cstring>
+
 struct JsonParserTests : public cudf::test::BaseFixture {};
 using cudf::json::detail::json_parser;
 using cudf::json::detail::json_token;
@@ -543,4 +545,175 @@ TEST_F(JsonParserTests, NormalTest)
   test_control_char();
   test_allow_tailing_useless_chars();
   test_is_valid();
+}
+
+template <int max_json_depth = 128>
+std::unique_ptr<json_parser<max_json_depth>> get_parse(std::string json_str,
+                                                       bool single_quote,
+                                                       bool control_char,
+                                                       bool allow_tailing = true,
+                                                       int max_string_len = 20000000,
+                                                       int max_num_len    = 1000)
+{
+  cudf::get_json_object_options options;
+  options.set_allow_single_quotes(single_quote);
+  options.set_allow_unescaped_control_chars(control_char);
+  options.set_allow_tailing_sub_string(allow_tailing);
+  options.set_max_string_len(max_string_len);
+  options.set_max_num_len(max_num_len);
+  return std::make_unique<json_parser<max_json_depth>>(options, json_str.data(), json_str.size());
+}
+
+TEST_F(JsonParserTests, SkipChildren)
+{
+  std::string json;
+
+  // test skip for the first {
+  json        = " { 'k1' : 'v1' , 'k2' : { 'k3' : { 'k4' : 'v5' }  }  } ";
+  auto parser = *get_parse(json, /*single_quote*/ true, /*control_char*/ true);
+  assert(!parser.try_skip_children());  // can not skip for INIT token
+  assert(json_token::START_OBJECT == parser.next_token());
+  assert(parser.try_skip_children());
+  assert(json_token::END_OBJECT == parser.get_current_token());
+  assert(json_token::SUCCESS == parser.next_token());
+  assert(!parser.try_skip_children());
+
+  // test skip for tokens not [ {
+  parser.reset();
+  assert(json_token::START_OBJECT == parser.next_token());
+  assert(json_token::FIELD_NAME == parser.next_token());
+  assert(parser.try_skip_children());
+  assert(json_token::FIELD_NAME == parser.get_current_token());
+
+  // skip for [
+  json        = " [ [ [ [ 1, 2, 3 ] ] ] ] ";
+  auto parser = *get_parse(json, /*single_quote*/ true, /*control_char*/ true);
+  assert(json_token::START_ARRAY == parser.next_token());
+  assert(json_token::START_ARRAY == parser.next_token());
+  assert(parser.try_skip_children());
+  assert(json_token::START_ARRAY == parser.next_token());
+  assert(json_token::SUCCESS == parser.next_token());
+  // can not skip for SUCCESS token
+  assert(!parser.try_skip_children());
+
+  parser.reset();
+  // can not skip for INIT token
+  assert(!parser.try_skip_children());
+
+  json        = " invalid ";
+  auto parser = *get_parse(json, /*single_quote*/ true, /*control_char*/ true);
+  assert(json_token::ERROR == parser.next_token());
+  // can not skip for ERROR token
+  assert(!parser.try_skip_children());
+}
+
+void clear_buff(char buf[], std::size_t size) { memset(buf, 0, size); }
+
+void assert_start_with(char* buf, std::size_t buf_size, const std::string& prefix)
+{
+  assert(prefix.size() < buf_size);
+  std::string str(buf, buf_size);
+  assert(0 == str.find(prefix));
+  for (std::size_t i = prefix.size(); i < str.size(); i++) {
+    assert('\0' == str[i]);
+  }
+}
+
+TEST_F(JsonParserTests, TryCopyRawStringText)
+{
+  constexpr std::size_t buf_size = 32;
+  char buf[buf_size];
+
+  // test escape: \", \', \\, \/, \b, \f, \n, \r, \t
+  std::string json = " {  '\\\"\\'\\\\\\/\\b\\f\\n\\r\\t'  :  '\\\"\\'\\\\\\/\\b\\f\\n\\r\\t' } ";
+  auto parser      = *get_parse(json, /*single_quote*/ true, /*control_char*/ true);
+
+  clear_buff(buf, buf_size);
+  // current token is INIT
+  assert(!parser.try_copy_raw_text(buf));
+  assert_start_with(buf, buf_size, "");
+
+  assert(json_token::START_OBJECT == parser.next_token());
+  clear_buff(buf, buf_size);
+  assert(parser.try_copy_raw_text(buf));
+  assert_start_with(buf, buf_size, "{");
+
+  assert(json_token::FIELD_NAME == parser.get_current_token());
+  clear_buff(buf, buf_size);
+  assert(parser.try_copy_raw_text(buf));
+  assert_start_with(buf, buf_size, "\"\'\\/\b\f\n\r\t");
+
+  assert(json_token::VALUE_STRING == parser.get_current_token());
+  clear_buff(buf, buf_size);
+  assert(parser.try_copy_raw_text(buf));
+  assert_start_with(buf, buf_size, "\"\'\\/\b\f\n\r\t");
+
+  assert(json_token::END_OBJECT == parser.next_token());
+  clear_buff(buf, buf_size);
+  assert(parser.try_copy_raw_text(buf));
+  assert_start_with(buf, buf_size, "}");
+
+  assert(json_token::SUCCESS == parser.next_token());
+  clear_buff(buf, buf_size);
+  // current token is SUCCESS
+  assert(!parser.try_copy_raw_text(buf));
+  assert_start_with(buf, buf_size, "");
+}
+
+TEST_F(JsonParserTests, TryCopyRawNumberText)
+{
+  constexpr std::size_t buf_size = 32;
+  char buf[buf_size];
+
+  std::string json = " [  -12345 ,  -1.23e-000123 , true , false , null  ] ";
+  auto parser      = *get_parse(json, /*single_quote*/ true, /*control_char*/ true);
+
+  assert(json_token::END_OBJECT == parser.next_token());
+  clear_buff(buf, buf_size);
+  assert(parser.try_copy_raw_text(buf));
+  assert_start_with(buf, buf_size, "[");
+
+  assert(json_token::END_OBJECT == parser.next_token());
+  clear_buff(buf, buf_size);
+  assert(parser.try_copy_raw_text(buf));
+  assert_start_with(buf, buf_size, "-12345");
+
+  assert(json_token::END_OBJECT == parser.next_token());
+  clear_buff(buf, buf_size);
+  assert(parser.try_copy_raw_text(buf));
+  assert_start_with(buf, buf_size, "-1.23e-000123");
+
+  assert(json_token::END_OBJECT == parser.next_token());
+  clear_buff(buf, buf_size);
+  assert(parser.try_copy_raw_text(buf));
+  assert_start_with(buf, buf_size, "true");
+
+  assert(json_token::END_OBJECT == parser.next_token());
+  clear_buff(buf, buf_size);
+  assert(parser.try_copy_raw_text(buf));
+  assert_start_with(buf, buf_size, "false");
+
+  assert(json_token::END_OBJECT == parser.next_token());
+  clear_buff(buf, buf_size);
+  assert(parser.try_copy_raw_text(buf));
+  assert_start_with(buf, buf_size, "null");
+
+  assert(json_token::END_OBJECT == parser.next_token());
+  clear_buff(buf, buf_size);
+  assert(parser.try_copy_raw_text(buf));
+  assert_start_with(buf, buf_size, "]");
+}
+
+TEST_F(JsonParserTests, TryCopyRawTextInvalid)
+{
+  constexpr std::size_t buf_size = 32;
+  char buf[buf_size];
+
+  std::string json = " invalid ";
+  auto parser      = *get_parse(json, /*single_quote*/ true, /*control_char*/ true);
+
+  assert(json_token::ERROR == parser.next_token());
+  clear_buff(buf, buf_size);
+  assert(!parser.try_copy_raw_text(buf));
+  assert_start_with(buf, buf_size, "");
 }
