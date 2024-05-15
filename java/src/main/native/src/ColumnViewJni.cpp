@@ -1522,6 +1522,26 @@ JNIEXPORT jlong JNICALL Java_ai_rapids_cudf_ColumnView_stringContains(JNIEnv* en
   CATCH_STD(env, 0);
 }
 
+JNIEXPORT jlong JNICALL Java_ai_rapids_cudf_ColumnView_stringContainsKMP(JNIEnv* env,
+                                                                      jobject j_object,
+                                                                      jlong j_view_handle,
+                                                                      jlong comp_string,
+                                                                      jlong j_kmp_next_handle)
+{
+  JNI_NULL_CHECK(env, j_view_handle, "column is null", false);
+  JNI_NULL_CHECK(env, comp_string, "comparison string scalar is null", false);
+
+  try {
+    cudf::jni::auto_set_device(env);
+    cudf::column_view* column_view = reinterpret_cast<cudf::column_view*>(j_view_handle);
+    cudf::strings_column_view strings_column(*column_view);
+    cudf::string_scalar* comp_scalar = reinterpret_cast<cudf::string_scalar*>(comp_string);
+    cudf::column_view* kmp_next_view = reinterpret_cast<cudf::column_view*>(j_kmp_next_handle);
+    return release_as_jlong(cudf::strings::kmp_contains(strings_column, *comp_scalar, *kmp_next_view));
+  }
+  CATCH_STD(env, 0);
+}
+
 JNIEXPORT jlong JNICALL Java_ai_rapids_cudf_ColumnView_matchesRe(JNIEnv* env,
                                                                  jobject j_object,
                                                                  jlong j_view_handle,

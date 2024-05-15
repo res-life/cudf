@@ -142,6 +142,29 @@ std::unique_ptr<column> contains(
 
 /**
  * @brief Returns a column of boolean values for each string where true indicates
+ * the target string was found within that string in the provided column.
+ *
+ * If the `target` is not found for a string, false is returned for that entry in the output column.
+ * If `target` is an empty string, true is returned for all non-null entries in the output column.
+ *
+ * Any null string entries return corresponding null entries in the output columns.
+ *
+ * @param input Strings instance for this operation
+ * @param target UTF-8 encoded string to search for in each string
+ * @param target_kmp_next KMP next array computed from `target` string
+ * @param stream CUDA stream used for device memory operations and kernel launches
+ * @param mr Device memory resource used to allocate the returned column's device memory
+ * @return New BOOL8 column
+ */
+std::unique_ptr<column> kmp_contains(
+  strings_column_view const& input,
+  string_scalar const& target,
+  column_view const& target_kmp_next,
+  rmm::cuda_stream_view stream      = cudf::get_default_stream(),
+  rmm::device_async_resource_ref mr = rmm::mr::get_current_device_resource());
+
+/**
+ * @brief Returns a column of boolean values for each string where true indicates
  * the corresponding target string was found within that string in the provided column.
  *
  * The 'output[i] = true` if string `targets[i]` is found inside `input[i]` otherwise

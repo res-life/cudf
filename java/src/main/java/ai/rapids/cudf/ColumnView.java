@@ -3351,6 +3351,29 @@ public class ColumnView implements AutoCloseable, BinaryOperable {
     return new ColumnVector(stringContains(getNativeView(), compString.getScalarHandle()));
   }
 
+
+  /**
+   * Checks if each string in a column contains a specified comparison string,
+   * resulting in a
+   * parallel column of the boolean results.
+   * 
+   * @param compString scalar containing the string being searched for.
+   * @return A new java column vector containing the boolean results.
+   */
+  public final ColumnVector stringContainsKMP(Scalar compString) {
+    assert type.equals(DType.STRING) : "column type must be a String";
+    assert compString != null : "compString scalar may not be null";
+    assert compString.getType().equals(DType.STRING) : "compString scalar must be a string scalar";
+
+    int[] kmpNextArray = KMPUtils.nextArray(compString.getJavaString());
+    try (HostColumnVector nextHv = HostColumnVector.fromInts(kmpNextArray)) {
+      try (ColumnVector nextCv = nextHv.copyToDevice()) {
+        return new ColumnVector(
+            stringContainsKMP(getNativeView(), compString.getScalarHandle(), nextCv.getNativeView()));
+      }
+    }
+  }
+
   /**
    * Replaces values less than `lo` in `input` with `lo`,
    * and values greater than `hi` with `hi`.
@@ -4455,6 +4478,21 @@ public class ColumnView implements AutoCloseable, BinaryOperable {
    * @return native handle of the resulting cudf column containing the boolean results.
    */
   private static native long stringContains(long cudfViewHandle, long compString) throws CudfException;
+
+  /**
+   * Native method for checking if strings in a column contains a specified
+   * comparison string.
+   * 
+   * @param cudfViewHandle native handle of the cudf::column_view being operated
+   *                       on.
+   * @param compString     handle of scalar containing the string being searched
+   *                       for.
+   * @param kmpNextArrayHandle native handle of the cudf::column_view for KMP next array
+   * @return native handle of the resulting cudf column containing the boolean
+   *         results.
+   */
+  private static native long stringContainsKMP(long cudfViewHandle, long compString, long kmpNextArrayHandle)
+      throws CudfException;
 
   /**
    * Native method for extracting results from a regex program pattern. Returns a table handle.

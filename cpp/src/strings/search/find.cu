@@ -549,6 +549,80 @@ std::unique_ptr<column> contains(strings_column_view const& input,
   return contains_fn(input, target, pfn, stream, mr);
 }
 
+struct kmp_fn {
+  column_device_view d_strings;
+  string_view target;
+  column_device_view d_target_next_array;
+
+  __device__ bool operator()(size_type idx) const
+  {
+    cudf::string_view text = d_strings.element<cudf::string_view>(idx);
+    char const* text_ptr = text.data();
+    char const* target_ptr = target.data();
+    const int text_length = text.size_bytes();
+    const int target_length = target.size_bytes();
+    int const* next_ptr = d_target_next_array.data<int>();
+
+    int i = 0, j = 0;
+
+    while (i < text_length && j < target_length) {
+        if (j == -1 || text_ptr[i] == target_ptr[j]) {
+            i++;
+            j++;
+        } else {
+            j = next_ptr[j];
+        }
+    }
+
+    return j == target_length;
+  }
+};
+
+std::unique_ptr<column> kmp_contains(
+  strings_column_view const& strings,
+  string_scalar const& target,
+  column_view const& target_kmp_next,
+  rmm::cuda_stream_view stream      = cudf::get_default_stream(),
+  rmm::device_async_resource_ref mr = rmm::mr::get_current_device_resource())
+{
+  auto strings_count = strings.size();
+  if (strings_count == 0) return make_empty_column(type_id::BOOL8);
+
+  CUDF_EXPECTS(target.is_valid(stream), "Parameter target must be valid.");
+  if (target.size() == 0)  // empty target string returns true
+  {
+    auto const true_scalar = make_fixed_width_scalar<bool>(true, stream);
+    auto results           = make_column_from_scalar(*true_scalar, strings.size(), stream, mr);
+    results->set_null_mask(cudf::detail::copy_bitmask(strings.parent(), stream, mr),
+                           strings.null_count());
+    return results;
+  }
+
+  auto d_target       = string_view(target.data(), target.size());
+  auto strings_column = column_device_view::create(strings.parent(), stream);
+  auto d_strings      = *strings_column;
+  auto target_kmp_next_column = column_device_view::create(target_kmp_next, stream);
+  auto d_target_kmp_next = *target_kmp_next_column;
+
+  // create output column
+  auto results      = make_numeric_column(data_type{type_id::BOOL8},
+                                     strings_count,
+                                     cudf::detail::copy_bitmask(strings.parent(), stream, mr),
+                                     strings.null_count(),
+                                     stream,
+                                     mr);
+  auto results_view = results->mutable_view();
+  auto d_results    = results_view.data<bool>();
+  // set the bool values by evaluating the passed function
+  thrust::transform(rmm::exec_policy(stream),
+                    thrust::make_counting_iterator<size_type>(0),
+                    thrust::make_counting_iterator<size_type>(strings_count),
+                    d_results,
+                    kmp_fn{d_strings, d_target, d_target_kmp_next});
+  results->set_null_count(strings.null_count());
+  return results;
+}
+
 std::unique_ptr<column> contains(strings_column_view const& strings,
                                  strings_column_view const& targets,
                                  rmm::cuda_stream_view stream,
