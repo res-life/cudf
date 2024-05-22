@@ -579,48 +579,23 @@ struct kmp_fn {
 };
 
 std::unique_ptr<column> kmp_contains(
-  strings_column_view const& strings,
+  strings_column_view const& input,
   string_scalar const& target,
   column_view const& target_kmp_next,
-  rmm::cuda_stream_view stream      = cudf::get_default_stream(),
-  rmm::device_async_resource_ref mr = rmm::mr::get_current_device_resource())
+  rmm::cuda_stream_view stream,
+  rmm::device_async_resource_ref mr)
 {
-  auto strings_count = strings.size();
-  if (strings_count == 0) return make_empty_column(type_id::BOOL8);
-
-  CUDF_EXPECTS(target.is_valid(stream), "Parameter target must be valid.");
-  if (target.size() == 0)  // empty target string returns true
-  {
-    auto const true_scalar = make_fixed_width_scalar<bool>(true, stream);
-    auto results           = make_column_from_scalar(*true_scalar, strings.size(), stream, mr);
-    results->set_null_mask(cudf::detail::copy_bitmask(strings.parent(), stream, mr),
-                           strings.null_count());
-    return results;
+  // use warp parallel when the average string width is greater than the threshold
+  if ((input.null_count() < input.size()) &&
+      ((input.chars_size(stream) / input.size()) > AVG_CHAR_BYTES_THRESHOLD)) {
+    return contains_warp_parallel(input, target, stream, mr);
   }
 
-  auto d_target       = string_view(target.data(), target.size());
-  auto strings_column = column_device_view::create(strings.parent(), stream);
-  auto d_strings      = *strings_column;
-  auto target_kmp_next_column = column_device_view::create(target_kmp_next, stream);
-  auto d_target_kmp_next = *target_kmp_next_column;
-
-  // create output column
-  auto results      = make_numeric_column(data_type{type_id::BOOL8},
-                                     strings_count,
-                                     cudf::detail::copy_bitmask(strings.parent(), stream, mr),
-                                     strings.null_count(),
-                                     stream,
-                                     mr);
-  auto results_view = results->mutable_view();
-  auto d_results    = results_view.data<bool>();
-  // set the bool values by evaluating the passed function
-  thrust::transform(rmm::exec_policy(stream),
-                    thrust::make_counting_iterator<size_type>(0),
-                    thrust::make_counting_iterator<size_type>(strings_count),
-                    d_results,
-                    kmp_fn{d_strings, d_target, d_target_kmp_next});
-  results->set_null_count(strings.null_count());
-  return results;
+  // benchmark measurements showed this to be faster for smaller strings
+  auto pfn = [] __device__(string_view d_string, string_view d_target) {
+    return d_string.find(d_target) != string_view::npos;
+  };
+  return contains_fn(input, target, pfn, stream, mr);
 }
 
 std::unique_ptr<column> contains(strings_column_view const& strings,
