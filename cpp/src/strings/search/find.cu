@@ -27,6 +27,7 @@
 #include <cudf/strings/strings_column_view.hpp>
 #include <cudf/utilities/default_stream.hpp>
 #include <cudf/utilities/error.hpp>
+#include <cudf/detail/utilities/integer_utils.hpp>
 
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/exec_policy.hpp>
@@ -336,83 +337,166 @@ std::unique_ptr<column> find(strings_column_view const& input,
 namespace detail {
 namespace {
 
+// /**
+//  * @brief Check if `d_target` appears in a row in `d_strings`.
+//  *
+//  * This executes as a warp per string/row and performs well for longer strings.
+//  * @see AVG_CHAR_BYTES_THRESHOLD
+//  *
+//  * @param d_strings Column of input strings
+//  * @param d_target String to search for in each row of `d_strings`
+//  * @param d_results Indicates which rows contain `d_target`
+//  */
+// CUDF_KERNEL void contains_warp_parallel_fn(column_device_view const d_strings,
+//                                            string_view const d_target,
+//                                            bool* d_results)
+// {
+//   size_type const idx = static_cast<size_type>(threadIdx.x + blockIdx.x * blockDim.x);
+//   using warp_reduce   = cub::WarpReduce<bool>;
+//   __shared__ typename warp_reduce::TempStorage temp_storage;
+
+//   if (idx >= (d_strings.size() * cudf::detail::warp_size)) { return; }
+
+//   auto const str_idx  = idx / cudf::detail::warp_size;
+//   auto const lane_idx = idx % cudf::detail::warp_size;
+//   if (d_strings.is_null(str_idx)) { return; }
+//   // get the string for this warp
+//   auto const d_str = d_strings.element<string_view>(str_idx);
+//   // each warp processes 4 starting bytes
+//   auto constexpr bytes_per_warp = 4;
+//   auto found                    = false;
+//   for (auto i = lane_idx * bytes_per_warp;
+//        !found && ((i + d_target.size_bytes()) <= d_str.size_bytes());
+//        i += cudf::detail::warp_size * bytes_per_warp) {
+//     // check the target matches this part of the d_str data
+//     // this is definitely faster for very long strings > 128B
+//     for (auto j = 0; j < bytes_per_warp; j++) {
+//       if (((i + j + d_target.size_bytes()) <= d_str.size_bytes()) &&
+//           d_target.compare(d_str.data() + i + j, d_target.size_bytes()) == 0) {
+//         found = true;
+//       }
+//     }
+//   }
+
+//   auto const result = warp_reduce(temp_storage).Reduce(found, cub::Max());
+//   if (lane_idx == 0) { d_results[str_idx] = result; }
+// }
+
+constexpr int row_group_chars = 1024;
+
 /**
- * @brief Check if `d_target` appears in a row in `d_strings`.
- *
- * This executes as a warp per string/row and performs well for longer strings.
- * @see AVG_CHAR_BYTES_THRESHOLD
- *
- * @param d_strings Column of input strings
- * @param d_target String to search for in each row of `d_strings`
- * @param d_results Indicates which rows contain `d_target`
- */
-CUDF_KERNEL void contains_warp_parallel_fn(column_device_view const d_strings,
-                                           string_view const d_target,
-                                           bool* d_results)
-{
-  size_type const idx = static_cast<size_type>(threadIdx.x + blockIdx.x * blockDim.x);
-  using warp_reduce   = cub::WarpReduce<bool>;
-  __shared__ typename warp_reduce::TempStorage temp_storage;
+ * Contiguous row group 
+*/
+struct row_group {
+  int start_row;
 
-  if (idx >= (d_strings.size() * cudf::detail::warp_size)) { return; }
+  // rows num. If it's zero, means this group is empty
+  int num_of_rows;
+};
 
-  auto const str_idx  = idx / cudf::detail::warp_size;
-  auto const lane_idx = idx % cudf::detail::warp_size;
-  if (d_strings.is_null(str_idx)) { return; }
-  // get the string for this warp
-  auto const d_str = d_strings.element<string_view>(str_idx);
-  // each warp processes 4 starting bytes
-  auto constexpr bytes_per_warp = 4;
-  auto found                    = false;
-  for (auto i = lane_idx * bytes_per_warp;
-       !found && ((i + d_target.size_bytes()) <= d_str.size_bytes());
-       i += cudf::detail::warp_size * bytes_per_warp) {
-    // check the target matches this part of the d_str data
-    // this is definitely faster for very long strings > 128B
-    for (auto j = 0; j < bytes_per_warp; j++) {
-      if (((i + j + d_target.size_bytes()) <= d_str.size_bytes()) &&
-          d_target.compare(d_str.data() + i + j, d_target.size_bytes()) == 0) {
-        found = true;
+struct find_row_group_fn {
+  column_device_view offsets;
+  // avg len of the strings
+  int avg_str_len;
+
+  /**
+  * 
+  * Find a row group.
+  * 
+  * e.g., split by 1K.
+  * offsets: | 0 | 3 | ... | 1k - 1 | 1k + 1 | ... | 2k | 2k + 1| ... | 3k - 1 | 3k + 1 |
+  * groups:      |           g1     |        g2         |          g3          |   g4   |
+  *
+  * Corner case 1:
+  * If a string is across multiple groups, then will generates some empty `row_group`s.
+  * e.g., split by 1K.
+  * offsets: | 0 |                               3k                                |
+  * groups:      |g1(empty)|g2(empty)|       g3(num_of_rows = 1, length = 3k)      |
+  *
+  */
+  __device__ row_group operator()(cudf::size_type group_idx) {
+    // rough find first
+    int expected_right_size = row_group_chars * (group_idx + 1);
+    int expected_left_size = row_group_chars * group_idx;
+    int first_try = expected_right_size / avg_str_len;
+
+    // 1. find first index <= expected_right_size
+    int right = first_try;
+    for (int i = first_try; i < offsets.size() - 1; ++i)
+    {
+      int curr_size = offsets.element<size_type>(i);
+      if (curr_size <= expected_right_size) {
+        right = i;
+      } else {
+        break;
+      }
+    }
+    for (int i = right; i >= 0; --i) {
+      int curr_size = offsets.element<size_type>(i);
+      if (curr_size > expected_right_size) {
+        right = i;
+      } else {
+        break;
+      }
+    }
+
+    // 2. find first index >= expected_left_size
+    int left = right;
+    for (int i = right; i >= 0; --i) {
+      int curr_size = offsets.element<size_type>(i);
+      if (curr_size >= expected_left_size) {
+        left = i;
+      } else {
+        break;
+      }
+    }
+    
+    // 3. check if a string is big than group size
+    if (left < right) {
+      return {left - 1, right - left + 1};
+    } else {
+      if (offsets.element<size_type>(right) > expected_left_size) {
+        return {right - 2, 1};
+      } else {
+        // 
+        return {0, 0};
       }
     }
   }
+};
 
-  auto const result = warp_reduce(temp_storage).Reduce(found, cub::Max());
-  if (lane_idx == 0) { d_results[str_idx] = result; }
-}
+// std::unique_ptr<column> contains_warp_parallel(strings_column_view const& input,
+//                                                string_scalar const& target,
+//                                                rmm::cuda_stream_view stream,
+//                                                rmm::device_async_resource_ref mr)
+// {
+//   CUDF_EXPECTS(target.is_valid(stream), "Parameter target must be valid.");
+//   auto d_target = string_view(target.data(), target.size());
 
-std::unique_ptr<column> contains_warp_parallel(strings_column_view const& input,
-                                               string_scalar const& target,
-                                               rmm::cuda_stream_view stream,
-                                               rmm::device_async_resource_ref mr)
-{
-  CUDF_EXPECTS(target.is_valid(stream), "Parameter target must be valid.");
-  auto d_target = string_view(target.data(), target.size());
+//   // create output column
+//   auto results = make_numeric_column(data_type{type_id::BOOL8},
+//                                      input.size(),
+//                                      cudf::detail::copy_bitmask(input.parent(), stream, mr),
+//                                      input.null_count(),
+//                                      stream,
+//                                      mr);
 
-  // create output column
-  auto results = make_numeric_column(data_type{type_id::BOOL8},
-                                     input.size(),
-                                     cudf::detail::copy_bitmask(input.parent(), stream, mr),
-                                     input.null_count(),
-                                     stream,
-                                     mr);
-
-  // fill the output with `false` unless the `d_target` is empty
-  auto results_view = results->mutable_view();
-  if (d_target.empty()) {
-    thrust::fill(
-      rmm::exec_policy_nosync(stream), results_view.begin<bool>(), results_view.end<bool>(), true);
-  } else {
-    // launch warp per string
-    auto const d_strings     = column_device_view::create(input.parent(), stream);
-    constexpr int block_size = 256;
-    cudf::detail::grid_1d grid{input.size() * cudf::detail::warp_size, block_size};
-    contains_warp_parallel_fn<<<grid.num_blocks, grid.num_threads_per_block, 0, stream.value()>>>(
-      *d_strings, d_target, results_view.data<bool>());
-  }
-  results->set_null_count(input.null_count());
-  return results;
-}
+//   // fill the output with `false` unless the `d_target` is empty
+//   auto results_view = results->mutable_view();
+//   if (d_target.empty()) {
+//     thrust::fill(
+//       rmm::exec_policy_nosync(stream), results_view.begin<bool>(), results_view.end<bool>(), true);
+//   } else {
+//     // launch warp per string
+//     auto const d_strings     = column_device_view::create(input.parent(), stream);
+//     constexpr int block_size = 256;
+//     cudf::detail::grid_1d grid{input.size() * cudf::detail::warp_size, block_size};
+//     contains_warp_parallel_fn<<<grid.num_blocks, grid.num_threads_per_block, 0, stream.value()>>>(
+//       *d_strings, d_target, results_view.data<bool>());
+//   }
+//   results->set_null_count(input.null_count());
+//   return results;
+// }
 
 /**
  * @brief Utility to return a bool column indicating the presence of
@@ -541,17 +625,61 @@ std::unique_ptr<column> contains(strings_column_view const& input,
                                  rmm::cuda_stream_view stream,
                                  rmm::device_async_resource_ref mr)
 {
-  // use warp parallel when the average string width is greater than the threshold
-  if ((input.null_count() < input.size()) &&
-      ((input.chars_size(stream) / input.size()) > AVG_CHAR_BYTES_THRESHOLD)) {
-    return contains_warp_parallel(input, target, stream, mr);
+  auto strings_count = input.size();
+  if (strings_count == 0) return make_empty_column(type_id::BOOL8);
+
+  CUDF_EXPECTS(target.is_valid(stream), "Parameter target must be valid.");
+  if (target.size() == 0)  // empty target string returns true
+  {
+    auto const true_scalar = make_fixed_width_scalar<bool>(true, stream);
+    auto results           = make_column_from_scalar(*true_scalar, input.size(), stream, mr);
+    results->set_null_mask(cudf::detail::copy_bitmask(input.parent(), stream, mr),
+                           input.null_count());
+    return results;
   }
 
-  // benchmark measurements showed this to be faster for smaller strings
-  auto pfn = [] __device__(string_view d_string, string_view d_target) {
-    return d_string.find(d_target) != string_view::npos;
-  };
-  return contains_fn(input, target, pfn, stream, mr);
+  int64_t total_chars_size = input.chars_size(stream);
+  int avg_str_len = total_chars_size / strings_count;
+  int group_count = cudf::util::div_rounding_up_safe<int32_t>(total_chars_size, row_group_chars);
+  auto offsets = input.offsets();
+
+  auto d_offsets = column_device_view::create(offsets, stream);
+  rmm::device_uvector<row_group> row_group_uvector(group_count, stream, mr);
+  cudf::device_span<row_group> row_group_span = row_group_uvector;
+  auto d_row_group = row_group_span.data();
+  thrust::transform(rmm::exec_policy(stream),
+                    thrust::make_counting_iterator<cudf::size_type>(0),
+                    thrust::make_counting_iterator<cudf::size_type>(group_count),
+                    d_row_group,
+                    find_row_group_fn{*d_offsets, avg_str_len});
+
+  auto strings_column = column_device_view::create(input.parent(), stream);
+  auto d_strings      = *strings_column;
+  auto d_target       = string_view(target.data(), target.size());
+  // create output column
+  auto results      = make_numeric_column(data_type{type_id::BOOL8},
+                                     strings_count,
+                                     cudf::detail::copy_bitmask(input.parent(), stream, mr),
+                                     input.null_count(),
+                                     stream,
+                                     mr);
+  auto results_view = results->mutable_view();
+  auto d_results    = results_view.data<bool>();
+  // set the bool values by evaluating the passed function
+  thrust::for_each(rmm::exec_policy(stream),
+                    thrust::make_counting_iterator<size_type>(0),
+                    thrust::make_counting_iterator<size_type>(group_count),
+                    [d_strings, d_row_group, d_target, d_results] __device__(size_type group_idx) {
+                      row_group const& g = d_row_group[group_idx];
+                      for (int i = 0; i < g.num_of_rows; i++)
+                      {
+                        int row_idx = i + g.start_row;
+                        d_results[row_idx] = !d_strings.is_null(row_idx) && 
+                          d_strings.element<string_view>(row_idx).find(d_target) != string_view::npos;
+                      }
+                    });
+  results->set_null_count(input.null_count());
+  return results;
 }
 
 std::unique_ptr<column> contains(strings_column_view const& strings,
