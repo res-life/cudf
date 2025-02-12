@@ -233,6 +233,132 @@ struct column_gatherer_impl<Element, std::enable_if_t<is_rep_layout_compatible<E
   }
 };
 
+template <typename InputItr, typename OutputItr, int block_size>
+CUDF_KERNEL void gather_ranges(InputItr source_itr,
+                   size_type source_size,
+                   int const* range_begin,
+                   int const  num_ranges,
+                   OutputItr target_itr)
+{
+  extern __shared__ int d_tasks[];
+  auto const tid = cudf::detail::grid_1d::global_thread_id();
+
+  auto const TASK_END = 256 + 1;
+  if (tid == 0)
+  {
+    d_tasks[TASK_END] = 0;
+  }
+  __syncthreads();
+
+  int next_in_range = 0;
+  int fill_offset = 0;
+  int fill_point = 1;
+
+  while (d_tasks[TASK_END] < num_ranges)
+  {
+    if (tid == 0)
+    {
+      // dispatch tasks
+      int dispatched_tasks = 0;
+      while (dispatched_tasks < 256)
+      {
+        int current_range = d_results[0];
+        int const size = range_begin[2 * current_range + 1]; 
+
+        if (next_in_range == size)
+        {
+          next_in_range = 0;
+          d_tasks[TASK_END] = current_range + 1;
+        } else {
+          int left = size - next_in_range;
+          if (left < 256 - dispatched_tasks)
+          {
+            dispatched_tasks += left;
+            for (auto i = 0; i < left; i++)
+            {
+              /* code */
+            }
+            next_in_range = size;
+          } else {
+            int offset = next_in_range;
+          }
+          dispatched_tasks += ();
+          next_in_range = size;
+        }
+      }
+
+      for (auto i = 0; i <= 256; i++)
+      {
+        d_tasks[i] = offset + i;
+      }
+      
+    }
+    __syncthreads();
+
+    // execute tasks
+    auto task = d_tasks[tid];
+    target_itr[tid + fill_offset] = source_itr[task];
+    fill_offset += 256;
+    __syncthreads();
+  }
+}
+
+// Error case when no other overload or specialization is available
+template <typename Element, typename Enable = void>
+struct column_ranges_gather_impl {
+  template <typename... Args>
+  std::unique_ptr<column> operator()(Args&&...)
+  {
+    CUDF_FAIL("Unsupported type in gather.");
+  }
+};
+
+/**
+ * @brief Function object for gathering a type-erased column.
+ *
+ * @param range_begin (offset, size) pair iterator type for the gather map, it's a iterator of int array.
+ * offset of the nth is: RangeIterator[2n], size of the nth is: RangeIterator[2n+1]
+ */
+template <typename Element>
+struct column_ranges_gather_impl<Element, std::enable_if_t<is_rep_layout_compatible<Element>()>> {
+  std::unique_ptr<column> operator()(column_view const& source_column,
+                                     int const* range_begin,
+                                     int const* range_end,
+                                     bool nullify_out_of_bounds,
+                                     rmm::cuda_stream_view stream,
+                                     rmm::device_async_resource_ref mr)
+  {
+    auto const num_ranges     = cudf::distance(range_begin, range_end) / 2;
+    auto const policy       = cudf::mask_allocation_policy::NEVER;
+
+    auto size_transformer =
+      cuda::proclaim_return_type<size_type>([range_ptr = range_begin
+      ] __device__(size_type index) -> size_type {
+                                              return range_ptr[2 * index + 1];
+      });
+    auto size_iter = cudf::detail::make_counting_transform_iterator(0, size_transformer);
+
+    auto numthrust::reduce(range_begin, range_end, d_results.begin(), Square());
+
+    auto const total_gather_rows = thrust::reduce(rmm::exec_policy(stream),
+                                         size_iter,
+                                         size_iter + num_ranges,
+                                         0);
+    auto destination_column = cudf::allocate_like(source_column, total_gather_rows, policy, stream, mr);
+
+    constexpr int block_size = 256;
+    constexpr int num_blocks = cudf::util::div_rounding_up_safe(num_ranges, block_size);
+
+    gather_ranges<<<num_blocks, block_size, block_size * 4 + 1, stream.view()>>>(source_column.data<Element>(),
+                  source_column.size(),
+                  destination_column->mutable_view().template begin<Element>(),
+                  range_begin,
+                  num_ranges);
+
+    return destination_column;
+  }
+};
+
 /**
  * @brief Function object for gathering a type-erased
  * column. To be used with column_gatherer to provide specialization for
