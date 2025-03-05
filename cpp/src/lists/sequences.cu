@@ -17,6 +17,7 @@
 #include <cudf/column/column_device_view.cuh>
 #include <cudf/column/column_factories.hpp>
 #include <cudf/detail/indexalator.cuh>
+#include <cudf/detail/labeling/label_segments.cuh>
 #include <cudf/detail/nvtx/ranges.hpp>
 #include <cudf/detail/sizes_to_offsets_iterator.cuh>
 #include <cudf/lists/detail/lists_column_factories.hpp>
@@ -43,36 +44,6 @@
 namespace cudf::lists {
 namespace detail {
 namespace {
-template <typename T>
-struct tabulator {
-  size_type const n_lists;
-  size_type const n_elements;
-
-  T const* const starts;
-  T const* const steps;
-  size_type const* const offsets;
-
-  template <typename U>
-  static std::enable_if_t<!cudf::is_duration<U>(), T> __device__ multiply(U x, size_type times)
-  {
-    return x * static_cast<T>(times);
-  }
-
-  template <typename U>
-  static std::enable_if_t<cudf::is_duration<U>(), T> __device__ multiply(U x, size_type times)
-  {
-    return T{x.count() * times};
-  }
-
-  auto __device__ operator()(size_type idx) const
-  {
-    auto const list_idx_end = thrust::upper_bound(thrust::seq, offsets, offsets + n_lists, idx);
-    auto const list_idx     = thrust::distance(offsets, list_idx_end) - 1;
-    auto const list_offset  = offsets[list_idx];
-    auto const list_step    = steps ? steps[list_idx] : T{1};
-    return starts[list_idx] + multiply(list_step, idx - list_offset);
-  }
-};
 
 template <typename T, typename Enable = void>
 struct sequences_functor {
@@ -88,12 +59,14 @@ struct sequences_dispatcher {
   std::unique_ptr<column> operator()(size_type n_lists,
                                      size_type n_elements,
                                      column_view const& starts,
+                                     column_view const& sizes,
                                      std::optional<column_view> const& steps,
                                      size_type const* offsets,
                                      rmm::cuda_stream_view stream,
                                      rmm::device_async_resource_ref mr)
   {
-    return sequences_functor<T>::invoke(n_lists, n_elements, starts, steps, offsets, stream, mr);
+    return sequences_functor<T>::invoke(
+      n_lists, n_elements, starts, sizes, steps, offsets, stream, mr);
   }
 };
 
@@ -108,6 +81,7 @@ struct sequences_functor<T, std::enable_if_t<is_supported<T>()>> {
   static std::unique_ptr<column> invoke(size_type n_lists,
                                         size_type n_elements,
                                         column_view const& starts,
+                                        column_view const& sizes,
                                         std::optional<column_view> const& steps,
                                         size_type const* offsets,
                                         rmm::cuda_stream_view stream,
@@ -117,15 +91,25 @@ struct sequences_functor<T, std::enable_if_t<is_supported<T>()>> {
       make_fixed_width_column(starts.type(), n_elements, mask_state::UNALLOCATED, stream, mr);
     if (starts.is_empty()) { return result; }
 
-    auto const result_begin = result->mutable_view().template begin<T>();
+    T* result_begin = result->mutable_view().template begin<T>();
 
     // Use pointers instead of column_device_view to access start and step values should be enough.
     // This is because we don't need to check for nulls and only support numeric and duration types.
-    auto const starts_begin = starts.template begin<T>();
-    auto const steps_begin  = steps ? steps.value().template begin<T>() : nullptr;
+    T const* starts_begin = starts.template begin<T>();
+    size_type const* sizes_begin  = sizes.template begin<size_type>();
 
-    auto const op = tabulator<T>{n_lists, n_elements, starts_begin, steps_begin, offsets};
-    thrust::tabulate(rmm::exec_policy(stream), result_begin, result_begin + n_elements, op);
+    thrust::for_each(rmm::exec_policy(stream),
+      thrust::make_counting_iterator<cudf::size_type>(0),
+      thrust::make_counting_iterator<cudf::size_type>(n_lists),
+      [starts_begin, sizes_begin, offsets, result_begin] __device__(auto const list_idx) {
+        T start = starts_begin[list_idx];
+        size_type size  = sizes_begin[list_idx];
+        size_type offset = offsets[list_idx];
+        for (size_type i = 0; i < size; i++)
+        {
+          result_begin[offset + i] = start + static_cast<T>(i);
+        }
+      });
 
     return result;
   }
@@ -146,13 +130,8 @@ std::unique_ptr<column> sequences(column_view const& starts,
                cudf::data_type_error);
 
   if (steps) {
-    auto const& steps_cv = steps.value();
-    CUDF_EXPECTS(!steps_cv.has_nulls(), "steps input column must not have nulls.");
-    CUDF_EXPECTS(starts.size() == steps_cv.size(),
-                 "starts and steps input columns must have the same number of rows.");
-    CUDF_EXPECTS(cudf::have_same_types(starts, steps_cv),
-                 "starts and steps input columns must have the same type.",
-                 cudf::data_type_error);
+    // TODO: support steps.
+    CUDF_FAIL("Unsupported per-list sequence type-agg combination.");
   }
 
   auto const n_lists = starts.size();
@@ -165,18 +144,19 @@ std::unique_ptr<column> sequences(column_view const& starts,
   auto const sizes_input_it = cudf::detail::indexalator_factory::make_input_iterator(sizes);
   // First copy the sizes since the exclusive_scan tries to read (n_lists+1) values
   thrust::copy_n(rmm::exec_policy(stream), sizes_input_it, sizes.size(), offsets_begin);
-
   auto const n_elements = cudf::detail::sizes_to_offsets(
     offsets_begin, offsets_begin + list_offsets->size(), offsets_begin, 0, stream);
   CUDF_EXPECTS(n_elements <= std::numeric_limits<size_type>::max(),
                "Size of output exceeds the column size limit",
                std::overflow_error);
 
+
   auto child = type_dispatcher(starts.type(),
                                sequences_dispatcher{},
                                n_lists,
                                static_cast<size_type>(n_elements),
                                starts,
+                               sizes,
                                steps,
                                offsets_begin,
                                stream,

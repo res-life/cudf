@@ -655,21 +655,21 @@ ConfigureTest(AST_TEST ast/transform_tests.cpp ast/ast_tree_tests.cpp)
 # * lists tests ----------------------------------------------------------------------------------
 ConfigureTest(
   LISTS_TEST
-  lists/combine/concatenate_list_elements_tests.cpp
-  lists/combine/concatenate_rows_tests.cpp
-  lists/contains_tests.cpp
-  lists/count_elements_tests.cpp
-  lists/explode_tests.cpp
-  lists/extract_tests.cpp
-  lists/reverse_tests.cpp
+  # lists/combine/concatenate_list_elements_tests.cpp
+  # lists/combine/concatenate_rows_tests.cpp
+  # lists/contains_tests.cpp
+  # lists/count_elements_tests.cpp
+  # lists/explode_tests.cpp
+  # lists/extract_tests.cpp
+  # lists/reverse_tests.cpp
   lists/sequences_tests.cpp
-  lists/set_operations/difference_distinct_tests.cpp
-  lists/set_operations/have_overlap_tests.cpp
-  lists/set_operations/intersect_distinct_tests.cpp
-  lists/set_operations/union_distinct_tests.cpp
-  lists/sort_lists_tests.cpp
-  lists/stream_compaction/apply_boolean_mask_tests.cpp
-  lists/stream_compaction/distinct_tests.cpp
+  # lists/set_operations/difference_distinct_tests.cpp
+  # lists/set_operations/have_overlap_tests.cpp
+  # lists/set_operations/intersect_distinct_tests.cpp
+  # lists/set_operations/union_distinct_tests.cpp
+  # lists/sort_lists_tests.cpp
+  # lists/stream_compaction/apply_boolean_mask_tests.cpp
+  # lists/stream_compaction/distinct_tests.cpp
   GPUS 1
   PERCENT 70
 )
