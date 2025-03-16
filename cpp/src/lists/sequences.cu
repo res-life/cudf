@@ -77,6 +77,35 @@ static constexpr bool is_supported()
 }
 
 template <typename T>
+void fill(T const* starts,
+          size_type const* sizes,
+          size_type const* offsets,
+          size_type n_lists,
+          size_type n_elements,
+          T* result,
+          rmm::cuda_stream_view stream,
+          rmm::device_async_resource_ref mr)
+{
+  auto labels = make_fixed_width_column(
+    cudf::data_type{cudf::type_id::INT32}, n_elements, mask_state::UNALLOCATED, stream, mr);
+  auto labels_begin = labels->mutable_view().begin<int32_t>();
+  cudf::detail::label_segments(
+    offsets, offsets + n_lists + 1, labels_begin, labels_begin + n_elements, stream);
+
+  thrust::tabulate(
+    rmm::exec_policy(stream),
+    result,
+    result + n_elements,
+    [starts, sizes, offsets, labels = labels->view().begin<size_type>()] __device__(size_type i) {
+      size_type const list_idx    = labels[i];
+      size_type const list_offset = offsets[list_idx];
+      size_type const idx_in_list = i - list_offset;
+      T const start               = starts[list_idx];
+      return start + static_cast<T>(idx_in_list);
+    });
+}
+
+template <typename T>
 struct sequences_functor<T, std::enable_if_t<is_supported<T>()>> {
   static std::unique_ptr<column> invoke(size_type n_lists,
                                         size_type n_elements,
@@ -93,24 +122,26 @@ struct sequences_functor<T, std::enable_if_t<is_supported<T>()>> {
 
     T* result_begin = result->mutable_view().template begin<T>();
 
+    // method 1: use list parallelism
     // Use pointers instead of column_device_view to access start and step values should be enough.
     // This is because we don't need to check for nulls and only support numeric and duration types.
-    T const* starts_begin = starts.template begin<T>();
-    size_type const* sizes_begin  = sizes.template begin<size_type>();
+    auto const* starts_begin = starts.template begin<T>();
+    auto const* sizes_begin  = sizes.template begin<size_type>();
+    // thrust::for_each(rmm::exec_policy(stream),
+    //   thrust::make_counting_iterator<cudf::size_type>(0),
+    //   thrust::make_counting_iterator<cudf::size_type>(n_lists),
+    //   [starts_begin, sizes_begin, offsets, result_begin] __device__(auto const list_idx) {
+    //     T start = starts_begin[list_idx];
+    //     size_type size  = sizes_begin[list_idx];
+    //     size_type offset = offsets[list_idx];
+    //     for (size_type i = 0; i < size; i++)
+    //     {
+    //       result_begin[offset + i] = start + static_cast<T>(i);
+    //     }
+    //   });
 
-    thrust::for_each(rmm::exec_policy(stream),
-      thrust::make_counting_iterator<cudf::size_type>(0),
-      thrust::make_counting_iterator<cudf::size_type>(n_lists),
-      [starts_begin, sizes_begin, offsets, result_begin] __device__(auto const list_idx) {
-        T start = starts_begin[list_idx];
-        size_type size  = sizes_begin[list_idx];
-        size_type offset = offsets[list_idx];
-        for (size_type i = 0; i < size; i++)
-        {
-          result_begin[offset + i] = start + static_cast<T>(i);
-        }
-      });
-
+    // method 2: use label_segments
+    fill(starts_begin, sizes_begin, offsets, n_lists, n_elements, result_begin, stream, mr);
     return result;
   }
 };
@@ -149,7 +180,6 @@ std::unique_ptr<column> sequences(column_view const& starts,
   CUDF_EXPECTS(n_elements <= std::numeric_limits<size_type>::max(),
                "Size of output exceeds the column size limit",
                std::overflow_error);
-
 
   auto child = type_dispatcher(starts.type(),
                                sequences_dispatcher{},
