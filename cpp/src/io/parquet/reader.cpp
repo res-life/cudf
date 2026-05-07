@@ -46,13 +46,19 @@ bool chunked_reader::has_next() const { return _impl->has_next(); }
 
 table_with_metadata chunked_reader::read_chunk() const { return _impl->read_chunk(); }
 
-void chunked_reader::read_chunk_h2d_only() const { _impl->read_chunk_h2d_only(); }
-
-void chunked_reader::read_chunk_decompress_only() const { _impl->read_chunk_decompress_only(); }
-
-table_with_metadata chunked_reader::read_chunk_decode_only() const
+void chunked_reader::read_chunk_h2d_only(rmm::cuda_stream_view stream) const
 {
-  return _impl->read_chunk_decode_only();
+  _impl->read_chunk_h2d_only(stream);
+}
+
+void chunked_reader::read_chunk_decompress_only(rmm::cuda_stream_view stream) const
+{
+  _impl->read_chunk_decompress_only(stream);
+}
+
+table_with_metadata chunked_reader::read_chunk_decode_only(rmm::cuda_stream_view stream) const
+{
+  return _impl->read_chunk_decode_only(stream);
 }
 
 }  // namespace cudf::io::parquet::detail

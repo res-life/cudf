@@ -823,31 +823,32 @@ table_with_metadata chunked_parquet_reader::read_chunk() const
 /**
  * @copydoc cudf::io::chunked_parquet_reader::read_chunk_h2d_only
  */
-void chunked_parquet_reader::read_chunk_h2d_only() const
+void chunked_parquet_reader::read_chunk_h2d_only(rmm::cuda_stream_view stream) const
 {
   CUDF_FUNC_RANGE();
   CUDF_EXPECTS(reader != nullptr, "Reader has not been constructed properly.");
-  reader->read_chunk_h2d_only();
+  reader->read_chunk_h2d_only(stream);
 }
 
 /**
  * @copydoc cudf::io::chunked_parquet_reader::read_chunk_decompress_only
  */
-void chunked_parquet_reader::read_chunk_decompress_only() const
+void chunked_parquet_reader::read_chunk_decompress_only(rmm::cuda_stream_view stream) const
 {
   CUDF_FUNC_RANGE();
   CUDF_EXPECTS(reader != nullptr, "Reader has not been constructed properly.");
-  reader->read_chunk_decompress_only();
+  reader->read_chunk_decompress_only(stream);
 }
 
 /**
  * @copydoc cudf::io::chunked_parquet_reader::read_chunk_decode_only
  */
-table_with_metadata chunked_parquet_reader::read_chunk_decode_only() const
+table_with_metadata chunked_parquet_reader::read_chunk_decode_only(
+  rmm::cuda_stream_view stream) const
 {
   CUDF_FUNC_RANGE();
   CUDF_EXPECTS(reader != nullptr, "Reader has not been constructed properly.");
-  return reader->read_chunk_decode_only();
+  return reader->read_chunk_decode_only(stream);
 }
 
 chunked_parquet_writer::chunked_parquet_writer() = default;

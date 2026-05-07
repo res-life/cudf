@@ -126,17 +126,17 @@ class reader_impl {
   /**
    * @copydoc cudf::io::chunked_parquet_reader::read_chunk_h2d_only
    */
-  void read_chunk_h2d_only();
+  void read_chunk_h2d_only(rmm::cuda_stream_view stream);
 
   /**
    * @copydoc cudf::io::chunked_parquet_reader::read_chunk_decompress_only
    */
-  void read_chunk_decompress_only();
+  void read_chunk_decompress_only(rmm::cuda_stream_view stream);
 
   /**
    * @copydoc cudf::io::chunked_parquet_reader::read_chunk_decode_only
    */
-  table_with_metadata read_chunk_decode_only();
+  table_with_metadata read_chunk_decode_only(rmm::cuda_stream_view stream);
 
   // top level functions involved with ratcheting through the passes, subpasses
   // and output chunks of the read process

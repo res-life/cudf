@@ -1026,18 +1026,31 @@ class chunked_parquet_reader {
    * use the reader's internal stream; per-stage stream parameters are a
    * follow-up extension.
    *
+   * Each method accepts a `cuda_stream_view` that overrides the reader's
+   * internal stream for the duration of the call — every RMM
+   * allocation and kernel launch inside that call uses the supplied
+   * stream. Caller must ensure proper event-based ordering between
+   * stages: typically cudaEventRecord on the H2D stream after
+   * read_chunk_h2d_only(), cudaStreamWaitEvent on the decompress stream
+   * before read_chunk_decompress_only(), and so on.
+   *
    * Equivalent flow:
    * @code
    *   while (reader.has_next()) {
-   *     reader.read_chunk_h2d_only();         // H2D compressed pages
-   *     reader.read_chunk_decompress_only();  // decompress on device
-   *     auto chunk = reader.read_chunk_decode_only();  // page decode
+   *     reader.read_chunk_h2d_only(s_h2d);
+   *     cudaEventRecord(e_h2d, s_h2d);
+   *     cudaStreamWaitEvent(s_dc, e_h2d);
+   *     reader.read_chunk_decompress_only(s_dc);
+   *     cudaEventRecord(e_dc, s_dc);
+   *     cudaStreamWaitEvent(s_dec, e_dc);
+   *     auto chunk = reader.read_chunk_decode_only(s_dec);
    *   }
    * @endcode
    */
-  void read_chunk_h2d_only() const;
-  void read_chunk_decompress_only() const;
-  [[nodiscard]] table_with_metadata read_chunk_decode_only() const;
+  void read_chunk_h2d_only(rmm::cuda_stream_view stream) const;
+  void read_chunk_decompress_only(rmm::cuda_stream_view stream) const;
+  [[nodiscard]] table_with_metadata read_chunk_decode_only(
+    rmm::cuda_stream_view stream) const;
 
  private:
   std::unique_ptr<cudf::io::parquet::detail::chunked_reader> reader;

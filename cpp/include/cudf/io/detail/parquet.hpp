@@ -171,17 +171,18 @@ class chunked_reader : private reader {
   /**
    * @copydoc cudf::io::chunked_parquet_reader::read_chunk_h2d_only
    */
-  void read_chunk_h2d_only() const;
+  void read_chunk_h2d_only(rmm::cuda_stream_view stream) const;
 
   /**
    * @copydoc cudf::io::chunked_parquet_reader::read_chunk_decompress_only
    */
-  void read_chunk_decompress_only() const;
+  void read_chunk_decompress_only(rmm::cuda_stream_view stream) const;
 
   /**
    * @copydoc cudf::io::chunked_parquet_reader::read_chunk_decode_only
    */
-  [[nodiscard]] table_with_metadata read_chunk_decode_only() const;
+  [[nodiscard]] table_with_metadata read_chunk_decode_only(
+    rmm::cuda_stream_view stream) const;
 };
 
 /**

@@ -967,15 +967,32 @@ table_with_metadata reader_impl::read_chunk()
 // successful return. The combined effect of the three calls is
 // observably identical to a single read_chunk() invocation.
 //
-// Currently all three reuse `_stream`, so although the caller can
-// schedule the three calls on different host threads / stream-pool
-// workers, the GPU-side work still serializes on `_stream`. A future
-// extension will accept per-stage `cuda_stream_view` parameters and
-// thread them through read_compressed_data / decompress_page_data /
-// decode_page_data so the work actually overlaps on independent
-// streams.
-void reader_impl::read_chunk_h2d_only()
+// Each method temporarily reassigns `_stream` to the caller-supplied
+// stream so every internal RMM allocation, hostdevice_vector copy, and
+// kernel launch within the call uses that stream. The reader's
+// pre-existing internal stream is restored before return so that any
+// future `read_chunk()` (single-call) usage continues to work.
+//
+// Caller is responsible for cross-stage event ordering: record an
+// event on stream_h2d after read_chunk_h2d_only(), wait on it from
+// stream_dc before read_chunk_decompress_only(), etc. Without that
+// ordering the decompress kernel may read compressed buffers whose
+// H2D copies haven't completed.
+//
+// RMM correctness: the pool memory resource is stream-ordered, so
+// allocations made on stream_h2d are visible to subsequent reads on
+// stream_dc as long as the caller properly synchronizes via events.
+//
+// This implementation lets a single chunk's stages run on different
+// streams (so e.g. h2d_only can overlap with downstream compute on a
+// different stream). Pipelining MULTIPLE in-flight chunks (chunk N+1
+// h2d while chunk N decode) requires the reader to maintain N sets of
+// pass/subpass state and is a separate restructure.
+void reader_impl::read_chunk_h2d_only(rmm::cuda_stream_view stream)
 {
+  auto const saved_stream = _stream;
+  _stream                 = stream;
+
   // Mirror the output-buffer reset that read_chunk() does up front so
   // a split-call sequence behaves the same as a single read_chunk().
   if (_file_itm_data._current_input_pass < _file_itm_data.num_passes() and
@@ -986,16 +1003,19 @@ void reader_impl::read_chunk_h2d_only()
     }
   }
 
-  // file-level preprocess on the very first call (mirrors prepare_data).
   if (!_file_preprocessed) { preprocess_file(read_mode::CHUNKED_READ); }
 
-  if (_file_itm_data._current_input_pass >= _file_itm_data.num_passes()) { return; }
+  if (_file_itm_data._current_input_pass >= _file_itm_data.num_passes()) {
+    _stream = saved_stream;
+    return;
+  }
 
   // Inline the H2D-only portion of handle_chunking. setup_next_pass
   // ends with read_compressed_data() (the H2D step). setup_next_subpass
   // is intentionally NOT invoked here — that's the decompress phase.
   if (!_pass_itm_data) {
     setup_next_pass(read_mode::CHUNKED_READ);
+    _stream = saved_stream;
     return;
   }
 
@@ -1003,6 +1023,7 @@ void reader_impl::read_chunk_h2d_only()
   if (pass.subpass != nullptr) {
     // Existing subpass still has output chunks; no fresh H2D work.
     if (pass.subpass->current_output_chunk < pass.subpass->output_chunk_read_info.size()) {
+      _stream = saved_stream;
       return;
     }
     pass.processed_rows += pass.subpass->num_rows;
@@ -1010,30 +1031,51 @@ void reader_impl::read_chunk_h2d_only()
     if (pass.processed_rows == pass.num_rows) {
       _pass_itm_data.reset();
       _file_itm_data._current_input_pass++;
-      if (_file_itm_data._current_input_pass == _file_itm_data.num_passes()) { return; }
+      if (_file_itm_data._current_input_pass == _file_itm_data.num_passes()) {
+        _stream = saved_stream;
+        return;
+      }
       setup_next_pass(read_mode::CHUNKED_READ);
     }
   }
+
+  _stream = saved_stream;
 }
 
-void reader_impl::read_chunk_decompress_only()
+void reader_impl::read_chunk_decompress_only(rmm::cuda_stream_view stream)
 {
+  auto const saved_stream = _stream;
+  _stream                 = stream;
+
   // No-op cases mirror handle_chunking's early returns: no work left,
   // or the existing subpass still has unread output chunks (its
   // decompressed buffers are still live).
-  if (_file_itm_data._current_input_pass >= _file_itm_data.num_passes()) { return; }
-  if (!_pass_itm_data) { return; }
+  if (_file_itm_data._current_input_pass >= _file_itm_data.num_passes()) {
+    _stream = saved_stream;
+    return;
+  }
+  if (!_pass_itm_data) {
+    _stream = saved_stream;
+    return;
+  }
   auto& pass = *_pass_itm_data;
   if (pass.subpass != nullptr &&
       pass.subpass->current_output_chunk < pass.subpass->output_chunk_read_info.size()) {
+    _stream = saved_stream;
     return;
   }
   setup_next_subpass(read_mode::CHUNKED_READ);
+
+  _stream = saved_stream;
 }
 
-table_with_metadata reader_impl::read_chunk_decode_only()
+table_with_metadata reader_impl::read_chunk_decode_only(rmm::cuda_stream_view stream)
 {
-  return read_chunk_internal(read_mode::CHUNKED_READ);
+  auto const saved_stream = _stream;
+  _stream                 = stream;
+  auto out                = read_chunk_internal(read_mode::CHUNKED_READ);
+  _stream                 = saved_stream;
+  return out;
 }
 
 bool reader_impl::has_next()
