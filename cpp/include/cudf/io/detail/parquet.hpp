@@ -183,6 +183,12 @@ class chunked_reader : private reader {
    */
   [[nodiscard]] table_with_metadata read_chunk_decode_only(
     rmm::cuda_stream_view stream) const;
+
+  /**
+   * @copydoc cudf::io::chunked_parquet_reader::read_chunk_decode_only_async
+   */
+  [[nodiscard]] table_with_metadata read_chunk_decode_only_async(
+    rmm::cuda_stream_view stream) const;
 };
 
 /**

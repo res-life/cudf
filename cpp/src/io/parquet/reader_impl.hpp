@@ -138,6 +138,11 @@ class reader_impl {
    */
   table_with_metadata read_chunk_decode_only(rmm::cuda_stream_view stream);
 
+  /**
+   * @copydoc cudf::io::chunked_parquet_reader::read_chunk_decode_only_async
+   */
+  table_with_metadata read_chunk_decode_only_async(rmm::cuda_stream_view stream);
+
   // top level functions involved with ratcheting through the passes, subpasses
   // and output chunks of the read process
  protected:
@@ -215,9 +220,13 @@ class reader_impl {
    * This function is called internally and expects all preprocessing steps have already been done.
    *
    * @param mode Value indicating if the data sources are read all at once or chunk by chunk
+   * @param skip_final_sync When true, skip the trailing _stream.synchronize() inside
+   *        decode_page_data. The returned table's device buffers may still have decode kernels
+   *        in flight; the caller is responsible for synchronizing the returned data via stream
+   *        events before consuming on a different stream. Used by the async staged-reader path.
    * @return The output table along with columns' metadata
    */
-  table_with_metadata read_chunk_internal(read_mode mode);
+  table_with_metadata read_chunk_internal(read_mode mode, bool skip_final_sync = false);
 
   // utility functions
  protected:
@@ -344,7 +353,8 @@ class reader_impl {
    * @param skip_rows Number of rows to skip from the start
    * @param num_rows Number of rows to decode
    */
-  void decode_page_data(read_mode mode, size_t skip_rows, size_t num_rows);
+  void decode_page_data(read_mode mode, size_t skip_rows, size_t num_rows,
+                        bool skip_final_sync = false);
 
   /**
    * @brief Invalidate output buffer nullmask for rows spanned by the pruned pages

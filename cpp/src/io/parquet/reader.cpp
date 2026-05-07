@@ -61,4 +61,10 @@ table_with_metadata chunked_reader::read_chunk_decode_only(rmm::cuda_stream_view
   return _impl->read_chunk_decode_only(stream);
 }
 
+table_with_metadata chunked_reader::read_chunk_decode_only_async(
+  rmm::cuda_stream_view stream) const
+{
+  return _impl->read_chunk_decode_only_async(stream);
+}
+
 }  // namespace cudf::io::parquet::detail

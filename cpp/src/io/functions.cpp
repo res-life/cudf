@@ -851,6 +851,17 @@ table_with_metadata chunked_parquet_reader::read_chunk_decode_only(
   return reader->read_chunk_decode_only(stream);
 }
 
+/**
+ * @copydoc cudf::io::chunked_parquet_reader::read_chunk_decode_only_async
+ */
+table_with_metadata chunked_parquet_reader::read_chunk_decode_only_async(
+  rmm::cuda_stream_view stream) const
+{
+  CUDF_FUNC_RANGE();
+  CUDF_EXPECTS(reader != nullptr, "Reader has not been constructed properly.");
+  return reader->read_chunk_decode_only_async(stream);
+}
+
 chunked_parquet_writer::chunked_parquet_writer() = default;
 
 /**

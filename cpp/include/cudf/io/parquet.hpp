@@ -1052,6 +1052,28 @@ class chunked_parquet_reader {
   [[nodiscard]] table_with_metadata read_chunk_decode_only(
     rmm::cuda_stream_view stream) const;
 
+  /**
+   * @brief Async variant of read_chunk_decode_only.
+   *
+   * Identical to read_chunk_decode_only except that the trailing
+   * _stream.synchronize() inside decode_page_data is skipped. The returned
+   * table's device buffers may still have decode kernels in flight on
+   * `stream` when this returns. Caller MUST chain downstream operators via
+   *   cudaEventRecord(decode_done, stream)
+   *   cudaStreamWaitEvent(consumer_stream, decode_done)
+   * before consuming the table on any stream other than `stream`. The
+   * scheduler in dp-poc does this automatically through Task::self_done.
+   *
+   * Lifts the per-chunk host stall in read_chunk(), letting the host
+   * immediately return to the caller and queue the next chunk's H2D /
+   * decompress / decode while the prior chunk's decode kernels are still
+   * running on the GPU. For PCIe-saturated workloads this delivers a small
+   * gain (the host sync overlaps fully with PCIe); for compute-bound or
+   * projection-heavy workloads it can be a noticeable speedup.
+   */
+  [[nodiscard]] table_with_metadata read_chunk_decode_only_async(
+    rmm::cuda_stream_view stream) const;
+
  private:
   std::unique_ptr<cudf::io::parquet::detail::chunked_reader> reader;
 };

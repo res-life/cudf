@@ -31,7 +31,8 @@
 
 namespace cudf::io::parquet::detail {
 
-void reader_impl::decode_page_data(read_mode mode, size_t skip_rows, size_t num_rows)
+void reader_impl::decode_page_data(read_mode mode, size_t skip_rows, size_t num_rows,
+                                   bool skip_final_sync)
 {
   CUDF_FUNC_RANGE();
 
@@ -476,7 +477,14 @@ void reader_impl::decode_page_data(read_mode mode, size_t skip_rows, size_t num_
     }
   }
 
-  _stream.synchronize();
+  // The trailing sync waits for `write_final_offsets` (the kernel queued at line ~454,
+  // above) and any unfinished decode kernels. For the async staged path we leave that
+  // work in-flight on `_stream` and let the caller chain downstream operators via a
+  // stream event recorded right after this function returns. Lines 462-477's host
+  // reads of pndi[].null_count are already safe regardless: error_code.value_sync()
+  // earlier in this function synced the device_to_host_async copies of the
+  // page_nesting_decode buffer.
+  if (!skip_final_sync) { _stream.synchronize(); }
 }
 
 reader_impl::reader_impl() : _options{} {}
@@ -654,7 +662,7 @@ void reader_impl::preprocess_chunk_strings(read_mode mode, row_range const& read
   compute_page_string_sizes_pass2(subpass.pages, pass.chunks, subpass.delta_temp_buf, _stream);
 }
 
-table_with_metadata reader_impl::read_chunk_internal(read_mode mode)
+table_with_metadata reader_impl::read_chunk_internal(read_mode mode, bool skip_final_sync)
 {
   CUDF_FUNC_RANGE();
 
@@ -717,7 +725,7 @@ table_with_metadata reader_impl::read_chunk_internal(read_mode mode)
   allocate_columns(mode, read_info.skip_rows, read_info.num_rows);
 
   // Parse data into the output buffers.
-  decode_page_data(mode, read_info.skip_rows, read_info.num_rows);
+  decode_page_data(mode, read_info.skip_rows, read_info.num_rows, skip_final_sync);
 
   // Create the final output cudf columns.
   for (size_t i = 0; i < _output_buffers.size(); ++i) {
@@ -1075,6 +1083,21 @@ table_with_metadata reader_impl::read_chunk_decode_only(rmm::cuda_stream_view st
   _stream                 = stream;
   auto out                = read_chunk_internal(read_mode::CHUNKED_READ);
   _stream                 = saved_stream;
+  return out;
+}
+
+table_with_metadata reader_impl::read_chunk_decode_only_async(rmm::cuda_stream_view stream)
+{
+  auto const saved_stream = _stream;
+  _stream                 = stream;
+  // Pass skip_final_sync=true so the trailing _stream.synchronize() inside
+  // decode_page_data is omitted. The returned table's device buffers may still
+  // have decode kernels in flight on `stream`. Caller MUST chain downstream
+  // operators via cudaEventRecord on `stream` + cudaStreamWaitEvent on the
+  // consuming stream — anything that consumes the table on a different stream
+  // without this sync handshake will race the decode kernel.
+  auto out = read_chunk_internal(read_mode::CHUNKED_READ, /*skip_final_sync=*/true);
+  _stream  = saved_stream;
   return out;
 }
 
