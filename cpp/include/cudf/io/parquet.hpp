@@ -1009,6 +1009,36 @@ class chunked_parquet_reader {
    */
   [[nodiscard]] table_with_metadata read_chunk() const;
 
+  /**
+   * @brief Read a chunk in three explicit stages: H2D, decompress, decode.
+   *
+   * `read_chunk()` performs all three stages back-to-back on the reader's
+   * internal stream. The split methods below let an external scheduler
+   * drive each stage as a separate task — typically on stream pools
+   * dedicated per stage — so that work for chunk N+1 can be staged while
+   * chunk N is still flowing through later stages, and the GPU sees a
+   * pipelined H2D / decompress / decode stream of work.
+   *
+   * Caller contract: the three methods must be invoked in order
+   * (h2d → decompress → decode) for each output chunk. The returned
+   * table from `read_chunk_decode_only()` is identical to what the
+   * single-call `read_chunk()` would have produced. All three currently
+   * use the reader's internal stream; per-stage stream parameters are a
+   * follow-up extension.
+   *
+   * Equivalent flow:
+   * @code
+   *   while (reader.has_next()) {
+   *     reader.read_chunk_h2d_only();         // H2D compressed pages
+   *     reader.read_chunk_decompress_only();  // decompress on device
+   *     auto chunk = reader.read_chunk_decode_only();  // page decode
+   *   }
+   * @endcode
+   */
+  void read_chunk_h2d_only() const;
+  void read_chunk_decompress_only() const;
+  [[nodiscard]] table_with_metadata read_chunk_decode_only() const;
+
  private:
   std::unique_ptr<cudf::io::parquet::detail::chunked_reader> reader;
 };
