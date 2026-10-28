@@ -8,6 +8,7 @@
 
 #include <cudf/copying.hpp>
 #include <cudf/partitioning.hpp>
+#include <cudf/reduction.hpp>
 #include <cudf/scalar/scalar.hpp>
 #include <cudf/table/table.hpp>
 #include <cudf/utilities/default_stream.hpp>
@@ -402,7 +403,71 @@ void bench_hash_partition_all_keys_stress(nvbench::state& state)
   run_hash_partition(state, *input, num_columns, num_partitions);
 }
 
+// Keep map generation outside the timed region and record output plus temporary allocation peaks.
+void run_map_partition(nvbench::state& state,
+                       cudf::table const& input,
+                       cudf::column_view map,
+                       cudf::size_type partitions)
+{
+  // Invalid partition ids have undefined behavior; check generated INT32 maps before timing.
+  {
+    auto const [minimum, maximum] = cudf::minmax(map);
+    CUDF_EXPECTS(
+      static_cast<cudf::numeric_scalar<cudf::size_type> const&>(*minimum).value() >= 0 &&
+        static_cast<cudf::numeric_scalar<cudf::size_type> const&>(*maximum).value() < partitions,
+      "Generated partition map is out of range");
+  }
+  state.set_cuda_stream(nvbench::make_cuda_stream_view(cudf::get_default_stream().get()));
+  state.add_element_count(input.num_rows(), "rows");
+  state.add_buffer_size(input.alloc_size(), "input_size", "input_size");
+  auto const mem_stats_logger = cudf::memory_stats_logger();
+  state.exec(nvbench::exec_tag::sync, [&](nvbench::launch&) {
+    [[maybe_unused]] auto output = cudf::partition(input.view(), map, partitions);
+  });
+  state.add_buffer_size(
+    mem_stats_logger.peak_memory_usage(), "peak_memory_usage", "peak_memory_usage");
+}
+
+// Measure partition-map materialization separately from hash computation.
+void bench_partition_map(nvbench::state& state)
+{
+  auto const rows       = get_size_type_axis(state, "num_rows");
+  auto const partitions = get_size_type_axis(state, "num_partitions");
+  auto const hot        = state.get_int64("hot_partition") != 0;
+  data_profile const profile =
+    data_profile_builder()
+      .distribution(cudf::type_id::INT32, distribution_id::UNIFORM, 0, hot ? 0 : partitions - 1)
+      .cardinality(0)
+      .avg_run_length(1)
+      .no_validity();
+  auto map          = create_random_column(cudf::type_id::INT32, row_count{rows}, profile);
+  auto const layout = state.get_string("layout");
+  std::unique_ptr<cudf::table> input;
+  if (layout == "int64") {
+    input = make_input_table(std::array{cudf::type_id::INT64}, {}, rows);
+  } else if (layout == "strings10") {
+    input = make_input_table({}, std::vector<cudf::type_id>(10, cudf::type_id::STRING), rows);
+  } else if (layout == "mixed_nullable") {
+    input = make_input_table(std::array{cudf::type_id::INT64},
+                             std::array{cudf::type_id::STRING, cudf::type_id::INT32},
+                             rows,
+                             0.1,
+                             0.1);
+  } else {
+    state.skip("Unknown partition layout: " + layout);
+    return;
+  }
+  run_map_partition(state, *input, map->view(), partitions);
+}
+
 }  // namespace
+
+NVBENCH_BENCH(bench_partition_map)
+  .set_name("partition_map")
+  .add_int64_axis("num_rows", {1024, 1 << 20, 1 << 23})
+  .add_int64_axis("num_partitions", {2, 100, 200, 256, 257})
+  .add_int64_axis("hot_partition", {0, 1})
+  .add_string_axis("layout", {"int64", "strings10", "mixed_nullable"});
 
 NVBENCH_BENCH_TYPES(bench_hash_partition_analytic,
                     NVBENCH_TYPE_AXES(nvbench::type_list<std::int32_t, std::int64_t>))

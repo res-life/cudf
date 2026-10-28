@@ -5,6 +5,7 @@
 #include <cudf_test/base_fixture.hpp>
 #include <cudf_test/column_utilities.hpp>
 #include <cudf_test/column_wrapper.hpp>
+#include <cudf_test/memory_resource_utilities.hpp>
 #include <cudf_test/table_utilities.hpp>
 #include <cudf_test/type_lists.hpp>
 
@@ -14,10 +15,17 @@
 #include <cudf/sorting.hpp>
 #include <cudf/table/table.hpp>
 
+#include <rmm/cuda_device.hpp>
+#include <rmm/mr/statistics_resource_adaptor.hpp>
+
 #include <cuda/iterator>
 #include <cuda/std/tuple>
+#include <cuda/stream>
 
 #include <algorithm>
+#include <cstdint>
+#include <limits>
+#include <numeric>
 
 template <typename T>
 class PartitionTest : public cudf::test::BaseFixture {
@@ -279,6 +287,103 @@ TYPED_TEST(PartitionTestFixedPoint, Partition2)
 }
 
 struct PartitionTestNotTyped : public cudf::test::BaseFixture {};
+
+template <typename MapType>
+struct PartitionMapRanksTest : public cudf::test::BaseFixture {};
+
+TYPED_TEST_SUITE(PartitionMapRanksTest, cudf::test::IntegralTypesNotBool);
+
+TYPED_TEST(PartitionMapRanksTest, TileBoundariesAndSkew)
+{
+  using size_type = cudf::size_type;
+  auto stream     = cuda::stream{cuda::device_ref{rmm::get_current_cuda_device().value()}};
+  for (auto const rows : {1023, 1024, 1025, 4099}) {
+    for (auto const partitions : {1, 2, 100, 200, 256, 257}) {
+      if (static_cast<std::uint64_t>(partitions - 1) >
+          static_cast<std::uint64_t>(std::numeric_limits<TypeParam>::max())) {
+        continue;
+      }
+      for (auto const distribution : {0, 1, 2}) {
+        SCOPED_TRACE(::testing::Message() << rows << "/" << partitions << "/" << distribution);
+        // Slice both the data and the map, with a different starting offset for each.
+        auto const ids =
+          cudf::detail::make_counting_transform_iterator(0, [](auto i) { return i; });
+        fixed_width_column_wrapper<size_type> row_ids(ids, ids + rows + 7);
+        auto const valid =
+          cudf::detail::make_counting_transform_iterator(0, [](auto i) { return i % 7 != 0; });
+        fixed_width_column_wrapper<size_type> nullable(ids, ids + rows + 7, valid);
+        std::vector<std::string> strings(rows + 7);
+        std::transform(ids, ids + rows + 7, strings.begin(), [](auto i) {
+          return i % 11 == 0 ? std::string{} : std::to_string(i) + "-\xE4\xB8\xAD";
+        });
+        strings_column_wrapper text(strings.begin(), strings.end(), valid);
+        auto input = cudf::slice(cudf::table_view{{row_ids, nullable, text}}, {7, rows + 7})[0];
+
+        std::vector<TypeParam> map(rows + 3, 0);
+        std::vector<size_type> expected_offsets(partitions + 1, 0);
+        for (size_type i = 0; i < rows; ++i) {
+          auto const partition = distribution == 1                  ? partitions - 1
+                                 : distribution == 2 && i % 10 != 0 ? 0
+                                                                    : (i * 17 + 3) % partitions;
+          map[i + 3]           = static_cast<TypeParam>(partition);
+          ++expected_offsets[partition + 1];
+        }
+        std::partial_sum(
+          expected_offsets.begin(), expected_offsets.end(), expected_offsets.begin());
+        fixed_width_column_wrapper<TypeParam> map_column(map.begin(), map.end());
+        auto map_view = cudf::slice(map_column, {3, rows + 3})[0];
+        cudf::get_default_stream().sync();
+
+        auto [output, offsets] = cudf::partition(input, map_view, partitions, stream, this->mr());
+        EXPECT_EQ(offsets, expected_offsets);
+        auto const [actual_ids, mask] =
+          cudf::test::to_host<size_type>(output->get_column(0), stream);
+        for (size_type p = 0; p < partitions; ++p) {
+          for (auto i = offsets[p]; i < offsets[p + 1]; ++i) {
+            ASSERT_GE(actual_ids[i], 7);
+            ASSERT_LT(actual_ids[i], rows + 7);
+            EXPECT_EQ(map[actual_ids[i] - 7 + 3], p);
+          }
+        }
+        // Unique row ids catch dropped/duplicated rows without requiring a stable partition.
+        auto sorted = cudf::sort(output->view(), {}, {}, stream, this->mr());
+        CUDF_TEST_EXPECT_TABLES_EQUAL(input, sorted->view(), stream);
+      }
+    }
+  }
+}
+
+TEST_F(PartitionTestNotTyped, PartitionMemoryResources)
+{
+  std::vector<std::string> values(1025);
+  std::vector<int32_t> partitions(1025, 0);
+  for (int32_t i = 0; i < 1025; ++i) {
+    values[i] = "value-" + std::to_string(i);
+  }
+  strings_column_wrapper strings(values.begin(), values.end());
+  fixed_width_column_wrapper<int32_t> map(partitions.begin(), partitions.end());
+  auto const input  = cudf::table_view{{strings, strings}};
+  auto stream       = cuda::stream{cuda::device_ref{rmm::get_current_cuda_device().value()}};
+  auto output_mr    = rmm::mr::statistics_resource_adaptor{mr()};
+  auto temporary_mr = rmm::mr::statistics_resource_adaptor{mr()};
+  cudf::get_default_stream().sync();
+  std::unique_ptr<cudf::table> output;
+  {
+    auto current = cudf::test::scoped_current_device_resource{temporary_mr};
+    auto result  = cudf::partition(input, map, 100, stream, output_mr);
+    output       = std::move(result.first);
+    stream.sync();
+  }
+  EXPECT_GT(output_mr.get_bytes_counter().value, 0);
+  EXPECT_GT(temporary_mr.get_bytes_counter().total, 0);
+  EXPECT_EQ(temporary_mr.get_bytes_counter().value, 0);
+  auto expected = cudf::sort(input);
+  auto actual   = cudf::sort(output->view());
+  CUDF_TEST_EXPECT_TABLES_EQUAL(expected->view(), actual->view());
+  output.reset();
+  stream.sync();
+  EXPECT_EQ(output_mr.get_bytes_counter().value, 0);
+}
 
 TEST_F(PartitionTestNotTyped, ListOfStringsEmpty)
 {

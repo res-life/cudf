@@ -33,6 +33,7 @@
 #include <thrust/scan.h>
 #include <thrust/transform.h>
 
+#include <cstdint>
 #include <stdexcept>
 
 namespace cudf {
@@ -754,24 +755,181 @@ std::pair<std::unique_ptr<table>, std::vector<size_type>> hash_partition_table(
   }
 }
 
+constexpr size_type MAP_PARTITION_BLOCK_SIZE       = 256;
+constexpr size_type MAP_PARTITION_ITEMS_PER_THREAD = 4;
+constexpr size_type MAP_PARTITION_TILE_SIZE =
+  MAP_PARTITION_BLOCK_SIZE * MAP_PARTITION_ITEMS_PER_THREAD;
+constexpr size_type MAP_PARTITION_MAX_BINS = 256;
+
+/**
+ * @brief Count each block's partitions and compute each row's rank within its partition.
+ *
+ * Each warp owns a histogram. Matching lanes elect one writer for each bin, avoiding
+ * atomic updates even when many rows belong to the same partition. Contiguous tiles
+ * per warp keep the resulting gather map in input order within each partition.
+ */
+template <typename MapType>
+CUDF_KERNEL void partition_map_local_ranks(MapType const* partition_map,
+                                           size_type num_rows,
+                                           size_type num_partitions,
+                                           uint16_t* local_ranks,
+                                           size_type* block_counts)
+{
+  constexpr size_type warp_size = 32;
+  constexpr size_type num_warps = MAP_PARTITION_BLOCK_SIZE / warp_size;
+  __shared__ size_type histogram[num_warps][MAP_PARTITION_MAX_BINS];
+  auto const lane = threadIdx.x % warp_size;
+  auto const warp = threadIdx.x / warp_size;
+  for (auto p = lane; p < num_partitions; p += warp_size) {
+    histogram[warp][p] = 0;
+  }
+  __syncwarp();
+
+  size_type ranks[MAP_PARTITION_ITEMS_PER_THREAD];
+  size_type partitions[MAP_PARTITION_ITEMS_PER_THREAD];
+#pragma unroll
+  for (size_type item = 0; item < MAP_PARTITION_ITEMS_PER_THREAD; ++item) {
+    auto const row = static_cast<std::size_t>(blockIdx.x) * MAP_PARTITION_TILE_SIZE +
+                     warp * warp_size * MAP_PARTITION_ITEMS_PER_THREAD + item * warp_size + lane;
+    auto const valid  = row < num_rows;
+    auto const active = __ballot_sync(0xffffffffu, valid);
+    if (valid) {
+      auto const partition = static_cast<size_type>(partition_map[row]);
+      partitions[item]     = partition;
+      auto const peers     = __match_any_sync(active, partition);
+      auto const base      = histogram[warp][partition];
+      ranks[item]          = base + __popc(peers & ((1u << lane) - 1u));
+      // All readers of a bin finish before its elected writer updates it.
+      __syncwarp(active);
+      if (lane == __ffs(peers) - 1) { histogram[warp][partition] = base + __popc(peers); }
+    }
+    __syncwarp();
+  }
+  __syncthreads();
+
+  for (auto partition = threadIdx.x; partition < num_partitions;
+       partition += MAP_PARTITION_BLOCK_SIZE) {
+    size_type total = 0;
+#pragma unroll
+    for (size_type w = 0; w < num_warps; ++w) {
+      auto const count        = histogram[w][partition];
+      histogram[w][partition] = total;
+      total += count;
+    }
+    block_counts[static_cast<std::size_t>(partition) * gridDim.x + blockIdx.x] = total;
+  }
+  __syncthreads();
+
+#pragma unroll
+  for (size_type item = 0; item < MAP_PARTITION_ITEMS_PER_THREAD; ++item) {
+    auto const row = static_cast<std::size_t>(blockIdx.x) * MAP_PARTITION_TILE_SIZE +
+                     warp * warp_size * MAP_PARTITION_ITEMS_PER_THREAD + item * warp_size + lane;
+    if (row < num_rows) {
+      // A rank is at most 1023, so two bytes per row are sufficient.
+      local_ranks[row] = static_cast<uint16_t>(histogram[warp][partitions[item]] + ranks[item]);
+    }
+  }
+}
+
+template <typename MapType>
+CUDF_KERNEL void partition_map_gather_indices(MapType const* partition_map,
+                                              uint16_t const* local_ranks,
+                                              size_type const* block_offsets,
+                                              size_type num_rows,
+                                              size_type num_blocks,
+                                              size_type num_partitions,
+                                              size_type* gather_map,
+                                              size_type* partition_offsets)
+{
+  __shared__ size_type partition_bases[MAP_PARTITION_MAX_BINS];
+  if (threadIdx.x < num_partitions) {
+    auto const partition_base    = static_cast<std::size_t>(threadIdx.x) * num_blocks;
+    partition_bases[threadIdx.x] = block_offsets[partition_base + blockIdx.x];
+    if (blockIdx.x == 0) { partition_offsets[threadIdx.x] = block_offsets[partition_base]; }
+  }
+  if (blockIdx.x == 0 && threadIdx.x == 0) { partition_offsets[num_partitions] = num_rows; }
+  __syncthreads();
+
+  // Reuse each block's partition bases across all rows in its tile.
+#pragma unroll
+  for (size_type item = 0; item < MAP_PARTITION_ITEMS_PER_THREAD; ++item) {
+    auto const row = static_cast<std::size_t>(blockIdx.x) * MAP_PARTITION_TILE_SIZE +
+                     item * MAP_PARTITION_BLOCK_SIZE + threadIdx.x;
+    if (row < num_rows) {
+      auto const partition    = static_cast<size_type>(partition_map[row]);
+      auto const destination  = partition_bases[partition] + local_ranks[row];
+      gather_map[destination] = static_cast<size_type>(row);
+    }
+  }
+}
+
+template <typename MapType>
+std::pair<std::unique_ptr<table>, std::vector<size_type>> partition_with_block_ranks(
+  table_view const& input,
+  column_view const& partition_map,
+  size_type num_partitions,
+  cuda::stream_ref stream,
+  rmm::device_async_resource_ref mr)
+{
+  auto const num_rows   = input.num_rows();
+  auto const num_blocks = (num_rows - 1) / MAP_PARTITION_TILE_SIZE + 1;
+  auto const temp_mr    = cudf::get_current_device_resource_ref();
+  cuda::device_buffer<size_type> gather_map(stream, temp_mr, num_rows, cuda::no_init);
+  std::vector<size_type> partition_offsets;
+  {
+    cuda::device_buffer<uint16_t> local_ranks(stream, temp_mr, num_rows, cuda::no_init);
+    cuda::device_buffer<size_type> block_offsets(
+      stream, temp_mr, static_cast<std::size_t>(num_blocks) * num_partitions, cuda::no_init);
+    cuda::device_buffer<size_type> offsets(stream, temp_mr, num_partitions + 1, cuda::no_init);
+    partition_map_local_ranks<<<num_blocks, MAP_PARTITION_BLOCK_SIZE, 0, stream.get()>>>(
+      partition_map.begin<MapType>(),
+      num_rows,
+      num_partitions,
+      local_ranks.data(),
+      block_offsets.data());
+    CUDF_CUDA_TRY(cudaPeekAtLastError());
+    // Partition-major layout gives both the partition base and preceding blocks'
+    // row counts in one scan, without an atomic cursor for each partition.
+    thrust::exclusive_scan(rmm::exec_policy_nosync(stream, temp_mr),
+                           block_offsets.begin(),
+                           block_offsets.end(),
+                           block_offsets.begin());
+    partition_map_gather_indices<<<num_blocks, MAP_PARTITION_BLOCK_SIZE, 0, stream.get()>>>(
+      partition_map.begin<MapType>(),
+      local_ranks.data(),
+      block_offsets.data(),
+      num_rows,
+      num_blocks,
+      num_partitions,
+      gather_map.data(),
+      offsets.data());
+    CUDF_CUDA_TRY(cudaPeekAtLastError());
+    partition_offsets = cudf::detail::make_std_vector(offsets, stream);
+  }
+  auto const gather_map_view =
+    column_view{data_type{type_id::INT32}, num_rows, gather_map.data(), nullptr, 0};
+  auto output = cudf::detail::gather(input,
+                                     gather_map_view,
+                                     out_of_bounds_policy::DONT_CHECK,
+                                     negative_index_policy::NOT_ALLOWED,
+                                     stream,
+                                     mr);
+  return {std::move(output), std::move(partition_offsets)};
+}
+
 struct dispatch_map_type {
   /**
    * @brief Partitions the table `t` according to the `partition_map`.
    *
-   * Algorithm:
+   * For a small partition count and at least one full tile, compute warp-local
+   * ranks and scan block histograms to build a gather map without per-row global atomics.
+   *
+   * Otherwise:
    * - Compute the histogram of the size each partition
    * - Compute the exclusive scan of the histogram to get the offset for each
    * partition in the final partitioned output
    * - Use a transform iterator to materialize the scatter map of the rows from
    * `t` into the final output.
-   *
-   * @note JH: It would likely be more efficient to avoid the atomic increments
-   * in the transform iterator. It would probably be faster to compute a
-   * per-thread block histogram and compute an exclusive scan of all of the
-   * per-block histograms (like in hash partition). But I'm purposefully trying
-   * to reduce memory pressure by avoiding intermediate materializations. Plus,
-   * atomics resolve in L2 and should be pretty fast since all the offsets will
-   * fit in L2.
    *
    */
   template <typename MapType>
@@ -783,6 +941,11 @@ struct dispatch_map_type {
     rmm::device_async_resource_ref mr) const
     requires(is_index_type<MapType>())
   {
+    if (num_partitions > 1 && num_partitions <= MAP_PARTITION_MAX_BINS &&
+        t.num_rows() >= MAP_PARTITION_TILE_SIZE) {
+      return partition_with_block_ranks<MapType>(t, partition_map, num_partitions, stream, mr);
+    }
+
     // Build a histogram of the number of rows in each partition
     rmm::device_uvector<size_type> histogram(num_partitions + 1, stream);
     std::size_t temp_storage_bytes{};
