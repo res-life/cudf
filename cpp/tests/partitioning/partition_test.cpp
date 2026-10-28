@@ -14,6 +14,7 @@
 #include <cudf/partitioning.hpp>
 #include <cudf/sorting.hpp>
 #include <cudf/table/table.hpp>
+#include <cudf/unary.hpp>
 #include <cudf/utilities/default_stream.hpp>
 
 #include <rmm/cuda_device.hpp>
@@ -549,4 +550,100 @@ TEST_F(PartitionTestNotTyped, NoIntegerOverflow)
   auto expected_table = cudf::table_view{{expected}};
 
   run_partition_test(table_to_partition, map, 2, expected_table, expected_offsets);
+}
+
+TEST_F(PartitionTestNotTyped, StringPermutationAndFallbacks)
+{
+  auto stream = cuda::stream{cuda::device_ref{rmm::get_current_cuda_device().value()}};
+  // Schemas 0/4 exercise the fused path with longer/short strings. Schemas 1/2/3 fall back for
+  // nullable strings, mixed types, and INT64 offsets, respectively.
+  for (auto const schema : {0, 1, 2, 3, 4}) {
+    for (auto const rows : {1025, 4099}) {
+      auto const total = rows + 5;
+      std::vector<std::string> ids(total), values(total), empty(total);
+      std::vector<bool> valid(total);
+      std::vector<int32_t> numbers(total), partition_ids(total);
+      for (int32_t i = 0; i < total; ++i) {
+        ids[i]    = "row-" + std::to_string(i);
+        values[i] = i % 13 == 0 ? std::string{"a\0b", 3}
+                    : i % 7 == 0
+                      ? std::string{}
+                      : std::string(i % 67, 'a' + i % 26) + "\xE4\xB8\xAD\xF0\x9F\x8C\x8D";
+        if (schema == 4) {
+          values[i] = i % 13 == 0  ? std::string{"a\0b", 3}
+                      : i % 7 == 0 ? "\xE4\xB8\xAD"
+                                   : std::string(i % 17, 'a' + i % 26);
+        }
+        valid[i]   = i % 11 != 0;
+        numbers[i] = i;
+      }
+      strings_column_wrapper id_column(ids.begin(), ids.end());
+      strings_column_wrapper empty_column(empty.begin(), empty.end());
+      auto value_column =
+        schema == 1 ? strings_column_wrapper(values.begin(), values.end(), valid.begin()).release()
+                    : strings_column_wrapper(values.begin(), values.end()).release();
+      if (schema == 3) {
+        auto contents = value_column->release();
+        auto wide_offsets =
+          cudf::cast(contents.children[0]->view(), cudf::data_type{cudf::type_id::INT64});
+        value_column =
+          cudf::make_strings_column(total,
+                                    std::move(wide_offsets),
+                                    std::move(*contents.data),
+                                    0,
+                                    cudf::create_null_mask(0, cudf::mask_state::UNALLOCATED));
+      }
+      fixed_width_column_wrapper<int32_t> numeric(numbers.begin(), numbers.end());
+      std::vector<cudf::column_view> columns{id_column, *value_column, empty_column};
+      if (schema == 2) { columns.push_back(numeric); }
+      auto input = cudf::slice(cudf::table_view{columns}, {5, total})[0];
+      for (auto const partitions : {100, 200}) {
+        for (auto const skew : {false, true}) {
+          SCOPED_TRACE(::testing::Message()
+                       << schema << "/" << rows << "/" << partitions << "/" << skew);
+          std::vector<int32_t> expected_offsets(partitions + 1, 0);
+          for (int32_t i = 0; i < rows; ++i) {
+            partition_ids[i + 5] = skew && i % 10 != 0 ? partitions - 1 : (i * 37 + 7) % partitions;
+            ++expected_offsets[partition_ids[i + 5] + 1];
+          }
+          std::partial_sum(
+            expected_offsets.begin(), expected_offsets.end(), expected_offsets.begin());
+          fixed_width_column_wrapper<int32_t> map(partition_ids.begin(), partition_ids.end());
+          auto map_view = cudf::slice(map, {5, total})[0];
+          cudf::get_default_stream().sync();
+          auto [output, offsets] = cudf::partition(input, map_view, partitions, stream, mr());
+          EXPECT_EQ(offsets, expected_offsets);
+          auto const [actual_ids, mask] =
+            cudf::test::to_host<std::string>(output->get_column(0), stream);
+          std::vector<bool> seen(total, false);
+          for (int32_t p = 0; p < partitions; ++p) {
+            for (auto row = offsets[p]; row < offsets[p + 1]; ++row) {
+              auto const id = std::stoi(actual_ids[row].substr(4));
+              ASSERT_GE(id, 5);
+              ASSERT_LT(id, total);
+              EXPECT_FALSE(seen[id]);
+              seen[id] = true;
+              EXPECT_EQ(partition_ids[id], p);
+            }
+          }
+          auto expected = cudf::sort(input, {}, {}, stream, mr());
+          auto actual   = cudf::sort(output->view(), {}, {}, stream, mr());
+          CUDF_TEST_EXPECT_TABLES_EQUIVALENT(expected->view(), actual->view(), stream);
+        }
+      }
+    }
+  }
+}
+
+TEST_F(PartitionTestNotTyped, AllEmptyStringPermutation)
+{
+  std::vector<std::string> empty(1025);
+  strings_column_wrapper strings(empty.begin(), empty.end());
+  auto input = cudf::table_view{{strings, strings}};
+  std::vector<int32_t> partition_ids(1025, 199);
+  fixed_width_column_wrapper<int32_t> map(partition_ids.begin(), partition_ids.end());
+  auto [output, offsets] = cudf::partition(input, map, 200);
+  EXPECT_TRUE(std::all_of(offsets.begin(), offsets.end() - 1, [](auto x) { return x == 0; }));
+  EXPECT_EQ(offsets.back(), 1025);
+  CUDF_TEST_EXPECT_TABLES_EQUAL(input, output->view());
 }

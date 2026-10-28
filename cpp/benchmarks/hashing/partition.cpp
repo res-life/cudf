@@ -468,7 +468,65 @@ void bench_partition_map(nvbench::state& state)
   run_map_partition(state, *input, map->view(), partitions);
 }
 
+// Vary byte lengths independently from the 10-column scaling workload.
+void run_string_partition(nvbench::state& state,
+                          cudf::size_type rows,
+                          cudf::size_type min_length,
+                          cudf::size_type max_length,
+                          std::optional<double> null_probability)
+{
+  auto const partitions  = get_size_type_axis(state, "num_partitions");
+  auto const num_columns = get_size_type_axis(state, "num_columns");
+  data_profile const map_profile =
+    data_profile_builder()
+      .distribution(cudf::type_id::INT32, distribution_id::UNIFORM, 0, partitions - 1)
+      .cardinality(0)
+      .avg_run_length(1)
+      .no_validity();
+  data_profile const string_profile =
+    data_profile_builder()
+      .distribution(cudf::type_id::STRING, distribution_id::UNIFORM, min_length, max_length)
+      .cardinality(0)
+      .avg_run_length(1)
+      .null_probability(null_probability);
+  auto map = create_random_column(cudf::type_id::INT32, row_count{rows}, map_profile);
+  std::vector<std::unique_ptr<cudf::column>> columns;
+  for (cudf::size_type seed = 0; seed < num_columns; ++seed) {
+    columns.push_back(create_ascii_string_column(string_profile, rows, seed));
+  }
+  auto input = cudf::table(std::move(columns));
+  run_map_partition(state, input, map->view(), partitions);
+}
+
+void bench_partition_strings(nvbench::state& state)
+{
+  run_string_partition(state, get_size_type_axis(state, "num_rows"), 16, 48, std::nullopt);
+}
+
+void bench_partition_string_lengths(nvbench::state& state)
+{
+  auto const nulls = state.get_int64("null_percent");
+  run_string_partition(state,
+                       1'000'000,
+                       0,
+                       get_size_type_axis(state, "max_length"),
+                       nulls == 0 ? std::nullopt : std::optional<double>{nulls / 100.0});
+}
+
 }  // namespace
+
+NVBENCH_BENCH(bench_partition_strings)
+  .set_name("partition_strings")
+  .add_int64_axis("num_rows", {1'000'000, 10'000'000})
+  .add_int64_axis("num_columns", {2, 10})
+  .add_int64_axis("num_partitions", {100, 200});
+
+NVBENCH_BENCH(bench_partition_string_lengths)
+  .set_name("partition_string_lengths")
+  .add_int64_axis("max_length", {0, 8, 16, 24, 32, 128, 256})
+  .add_int64_axis("num_columns", {2, 10})
+  .add_int64_axis("null_percent", {0, 10})
+  .add_int64_axis("num_partitions", {100, 200});
 
 NVBENCH_BENCH(bench_partition_map)
   .set_name("partition_map")
