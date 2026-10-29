@@ -92,10 +92,11 @@ CUDF_KERNEL void copy_partition_strings(partition_string_column const* columns,
  * must be a permutation, as guaranteed by partition's rank/scan construction. Repeated or missing
  * indices are not supported. Other schemas return nullptr for the caller's generic gather path.
  */
-inline std::unique_ptr<table> gather_partition_strings(table_view const& input,
-                                                       device_span<size_type const> gather_map,
-                                                       cuda::stream_ref stream,
-                                                       rmm::device_async_resource_ref mr)
+[[nodiscard]] inline std::unique_ptr<table> gather_partition_strings(
+  table_view const& input,
+  device_span<size_type const> gather_map,
+  cuda::stream_ref stream,
+  rmm::device_async_resource_ref mr)
 {
   if (input.num_columns() < 2 || input.num_columns() > 65'535 ||
       !std::all_of(input.begin(), input.end(), [](auto const& column) {
