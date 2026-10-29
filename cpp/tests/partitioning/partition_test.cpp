@@ -707,3 +707,23 @@ TEST_F(PartitionTestNotTyped, StringPermutationOutputOffsetThreshold)
     }
   }
 }
+
+TEST_F(PartitionTestNotTyped, StringPermutationCopyGridStride)
+{
+  for (auto const width : {4, 16}) {
+    // One row beyond the first pass of each capped 4/16-lane copy grid.
+    auto const rows = cudf::size_type{65'535 * (256 / width) + 1};
+    SCOPED_TRACE(::testing::Message() << width << "/" << rows);
+    auto const value  = std::string(width, 'x');
+    auto const values = cuda::make_constant_iterator(value.c_str());
+    strings_column_wrapper strings(values, values + rows);
+    auto const ones = cuda::make_constant_iterator<int32_t>(1);
+    fixed_width_column_wrapper<int32_t> map(ones, ones + rows);
+    auto const input = cudf::table_view{{strings, strings}};
+    ASSERT_EQ(cudf::strings_column_view(input.column(0)).offsets().type().id(),
+              cudf::type_id::INT32);
+    auto [output, offsets] = cudf::partition(input, map, 2);
+    EXPECT_EQ(offsets, (std::vector<cudf::size_type>{0, 0, rows}));
+    CUDF_TEST_EXPECT_TABLES_EQUAL(input, output->view());
+  }
+}
