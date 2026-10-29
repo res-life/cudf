@@ -766,7 +766,15 @@ table_with_metadata reader_impl::read_chunk_internal(read_mode mode)
   // account. PageInfo::skipped_values, which tells us where to start decoding in the input to
   // respect the user bounds. It is only necessary to do this second pass if uses_custom_row_bounds
   // is set (if the user has specified artificial bounds).
-  if (uses_custom_row_bounds(mode)) {
+  // Flat pages are decoded from the beginning and filtered by row bounds in the decoder. The
+  // trim pass only rewrites their nesting batch sizes with the full page value count already
+  // computed by the base pass. Keep the trim pass for nested or page-pruned reads, where it
+  // computes information that downstream allocation and decoding need.
+  auto const has_repetition =
+    std::any_of(pass.chunks.begin(), pass.chunks.end(), [](auto const& c) {
+      return c.max_level[level_type::REPETITION] > 0;
+    });
+  if (uses_custom_row_bounds(mode) && (has_repetition || !subpass_page_mask_span().is_empty())) {
     compute_page_sizes(subpass.pages,
                        pass.chunks,
                        subpass_page_mask_span(),
