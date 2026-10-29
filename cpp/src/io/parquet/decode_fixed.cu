@@ -533,8 +533,8 @@ template <int decode_block_size, typename level_t, typename state_buf>
 __device__ int update_validity_and_row_indices_flat(
   int32_t target_value_count, auto* s, state_buf* sb, level_t const* const def, int t)
 {
-  constexpr int num_warps      = decode_block_size / cudf::detail::warp_size;
-  constexpr int max_batch_size = num_warps * cudf::detail::warp_size;
+  constexpr int items_per_thread = 2;
+  constexpr int max_batch_size   = decode_block_size * items_per_thread;
 
   auto& ni = s->nesting.nesting_info[0];
 
@@ -554,61 +554,72 @@ __device__ int update_validity_and_row_indices_flat(
   while (value_count < capped_target_value_count) {
     int const batch_size = min(max_batch_size, capped_target_value_count - value_count);
 
-    int const thread_value_count = t;
-    int const block_value_count  = batch_size;
-
-    // compute our row index, whether we're in row bounds, and validity
-    // This ASSUMES that s->progress.row_index_lower_bound is always -1!
-    // Its purpose is to handle rows than span page boundaries, which only happen for lists.
-    int const row_index     = thread_value_count + value_count;
-    int const in_row_bounds = (row_index < last_row);
-
-    // use definition level & row bounds to determine if is valid
-    int const is_valid =
-      ((t >= batch_size) || !in_row_bounds) ? 0 : ((def[value_count + t] > 0) ? 1 : 0);
+    // Consecutive items per thread preserve row order in the block scan while
+    // doubling the rows handled by each collective.
+    int const thread_value_count = t * items_per_thread;
+    int const pos0               = thread_value_count;
+    int const pos1               = pos0 + 1;
+    int const is_valid0     = pos0 < batch_size ? static_cast<int>(def[value_count + pos0] > 0) : 0;
+    int const is_valid1     = pos1 < batch_size ? static_cast<int>(def[value_count + pos1] > 0) : 0;
+    int const thread_valids = is_valid0 + is_valid1;
 
     // thread and block validity count
     using block_scan = cub::BlockScan<int, decode_block_size>;
     __shared__ typename block_scan::TempStorage scan_storage;
     int thread_valid_count, block_valid_count;
-    block_scan(scan_storage).ExclusiveSum(is_valid, thread_valid_count, block_valid_count);
-    uint32_t const warp_validity_mask = ballot(is_valid);
+    block_scan(scan_storage).ExclusiveSum(thread_valids, thread_valid_count, block_valid_count);
 
-    // validity is processed per-warp
-    //
-    // nested schemas always read and write to the same bounds (that is, read and write
-    // positions are already pre-bounded by first_row/num_rows). flat schemas will start reading
-    // at the first value, even if that is before first_row, because we cannot trivially jump to
-    // the correct position to start reading. since we are about to write the validity vector
-    // here we need to adjust our computed mask to take into account the write row bounds.
-    bool const in_write_row_bounds     = in_row_bounds && (row_index >= first_row);
-    int const in_write_row_bounds_mask = ballot(in_write_row_bounds);
-    // NOTE: The below CANNOT be std::countr_zero(), because for zero start must be 0 not 32
-    int const write_start = __ffs(in_write_row_bounds_mask) - 1;  // first bit in the warp to store
-    // lane 0 from each warp writes out validity
-    if ((write_start >= 0) && ((t % cudf::detail::warp_size) == 0)) {
-      int const vindex     = value_count + thread_value_count;  // absolute input value index
-      int const bit_offset = (valid_map_offset + vindex + write_start) -
-                             first_row;  // absolute bit offset into the output validity map
-      int const write_end =
-        cudf::detail::warp_size - __clz(in_write_row_bounds_mask);  // last bit in the warp to store
-      int const bit_count = write_end - write_start;
-
-      store_validity(bit_offset, ni.valid_map, warp_validity_mask >> write_start, bit_count);
+    uint32_t const valid0 = ballot(is_valid0);
+    uint32_t const valid1 = ballot(is_valid1);
+    int const lane        = t % cudf::detail::warp_size;
+    int const warp        = t / cudf::detail::warp_size;
+    if (lane == 0) {
+      // Interleave the two ballots back into the original 64-row order.
+      auto spread_bits = [](uint32_t bits) {
+        uint64_t spread = bits;
+        spread          = (spread | (spread << 16)) & 0x0000ffff0000ffffULL;
+        spread          = (spread | (spread << 8)) & 0x00ff00ff00ff00ffULL;
+        spread          = (spread | (spread << 4)) & 0x0f0f0f0f0f0f0f0fULL;
+        spread          = (spread | (spread << 2)) & 0x3333333333333333ULL;
+        return (spread | (spread << 1)) & 0x5555555555555555ULL;
+      };
+      uint64_t validity = spread_bits(valid0) | (spread_bits(valid1) << 1);
+      int const warp_value_count =
+        min(cudf::detail::warp_size * items_per_thread,
+            max(0, batch_size - warp * cudf::detail::warp_size * items_per_thread));
+      int const warp_first_row  = value_count + warp * cudf::detail::warp_size * items_per_thread;
+      int const write_first_row = max(warp_first_row, first_row);
+      int const write_last_row  = min(warp_first_row + warp_value_count, last_row);
+      int const write_count     = max(0, write_last_row - write_first_row);
+      if (write_count > 0) {
+        validity >>= write_first_row - warp_first_row;
+        int const bit_offset = valid_map_offset + write_first_row - first_row;
+        store_validity(bit_offset,
+                       ni.valid_map,
+                       static_cast<uint32_t>(validity),
+                       min(write_count, cudf::detail::warp_size));
+        if (write_count > cudf::detail::warp_size) {
+          store_validity(bit_offset + cudf::detail::warp_size,
+                         ni.valid_map,
+                         static_cast<uint32_t>(validity >> cudf::detail::warp_size),
+                         write_count - cudf::detail::warp_size);
+        }
+      }
     }
 
-    if (t == 0) { ni.null_count += block_value_count - block_valid_count; }
+    if (t == 0) { ni.null_count += batch_size - block_valid_count; }
 
-    // output offset
-    if (is_valid) {
-      int const dst_pos = value_count + thread_value_count;
-      int const src_pos = valid_count + thread_valid_count;
-
-      sb->nz_idx[rolling_index<state_buf::nz_buf_size>(src_pos)] = dst_pos;
+    if (is_valid0) {
+      sb->nz_idx[rolling_index<state_buf::nz_buf_size>(valid_count + thread_valid_count)] =
+        value_count + pos0;
+    }
+    if (is_valid1) {
+      auto const src_pos = valid_count + thread_valid_count + is_valid0;
+      sb->nz_idx[rolling_index<state_buf::nz_buf_size>(src_pos)] = value_count + pos1;
     }
 
     // update stuff
-    value_count += block_value_count;
+    value_count += batch_size;
     valid_count += block_valid_count;
 
     // Required before the next iteration reuses `scan_storage`: CUB needs a barrier between the
