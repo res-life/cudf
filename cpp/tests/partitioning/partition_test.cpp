@@ -444,6 +444,38 @@ TEST_F(PartitionTestNotTyped, PartitionMemoryResources)
   EXPECT_EQ(output_mr.get_bytes_counter().value, 0);
 }
 
+TEST_F(PartitionTestNotTyped, PartitionFixedWidthMemoryResources)
+{
+  constexpr cudf::size_type rows = 1025;
+  auto const ids = cudf::detail::make_counting_transform_iterator(0, [](auto i) { return i; });
+  fixed_width_column_wrapper<int32_t> data(ids, ids + rows);
+  auto const ones = cuda::make_constant_iterator<int32_t>(1);
+  fixed_width_column_wrapper<int32_t> map(ones, ones + rows);
+  auto stream = cuda::stream{cuda::device_ref{rmm::get_current_cuda_device().value()}};
+  cudf::get_default_stream().sync();
+
+  for (auto const& input : {cudf::table_view{{data}}, cudf::table_view{{data, data}}}) {
+    SCOPED_TRACE(input.num_columns());
+    cudf::test::memory_resource_test_harness resources{mr()};
+    std::unique_ptr<cudf::table> output;
+    {
+      auto current = cudf::test::scoped_current_device_resource{resources.temporary_mr()};
+      auto result  = cudf::partition(input, map, 2, stream, resources.output_mr());
+      output       = std::move(result.first);
+      EXPECT_EQ(result.second, (std::vector<cudf::size_type>{0, 0, rows}));
+      stream.sync();
+    }
+    resources.expect_resource_usage(output->alloc_size(),
+                                    {cudf::test::output_allocation_expectation::EXACT,
+                                     cudf::test::temporary_allocation_expectation::SOME},
+                                    stream);
+    auto sorted = cudf::sort(output->view(), {}, {}, stream, mr());
+    CUDF_TEST_EXPECT_TABLES_EQUAL(input, sorted->view(), stream);
+    output.reset();
+    resources.expect_no_live_allocations(stream);
+  }
+}
+
 TEST_F(PartitionTestNotTyped, ListOfStringsEmpty)
 {
   cudf::test::lists_column_wrapper<cudf::string_view> list{{}, {}};
