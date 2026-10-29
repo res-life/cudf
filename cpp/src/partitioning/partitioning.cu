@@ -760,6 +760,8 @@ constexpr size_type MAP_PARTITION_ITEMS_PER_THREAD = 4;
 constexpr size_type MAP_PARTITION_TILE_SIZE =
   MAP_PARTITION_BLOCK_SIZE * MAP_PARTITION_ITEMS_PER_THREAD;
 constexpr size_type MAP_PARTITION_MAX_BINS = 256;
+static_assert(MAP_PARTITION_MAX_BINS <= MAP_PARTITION_BLOCK_SIZE,
+              "Partition-base initialization requires one thread per partition");
 
 /**
  * @brief Count each block's partitions and compute each row's rank within its partition.
