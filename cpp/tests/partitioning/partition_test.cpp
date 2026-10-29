@@ -14,6 +14,7 @@
 #include <cudf/partitioning.hpp>
 #include <cudf/sorting.hpp>
 #include <cudf/table/table.hpp>
+#include <cudf/utilities/default_stream.hpp>
 
 #include <rmm/cuda_device.hpp>
 #include <rmm/mr/statistics_resource_adaptor.hpp>
@@ -26,6 +27,7 @@
 #include <cstdint>
 #include <limits>
 #include <numeric>
+#include <string>
 
 template <typename T>
 class PartitionTest : public cudf::test::BaseFixture {
