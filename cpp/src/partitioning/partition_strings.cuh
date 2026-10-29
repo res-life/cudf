@@ -128,12 +128,9 @@ CUDF_KERNEL void copy_partition_strings(partition_string_column const* columns,
   partition_string_sizes<<<(columns + 255) / 256, 256, 0, stream.get()>>>(
     device_columns.data(), columns, rows, device_sizes.data());
   auto const char_sizes         = cudf::detail::make_pinned_vector(device_sizes, stream);
+  auto const max_chars          = *std::max_element(char_sizes.begin(), char_sizes.end());
   auto const offset64_threshold = cudf::strings::get_offset64_threshold();
-  if (std::any_of(char_sizes.begin(), char_sizes.end(), [offset64_threshold](auto size) {
-        return size >= offset64_threshold;
-      })) {
-    return nullptr;
-  }
+  if (max_chars >= offset64_threshold) { return nullptr; }
 
   auto const sizes = [&](size_type const* input_offsets) {
     return cuda::transform_iterator(
@@ -144,7 +141,6 @@ CUDF_KERNEL void copy_partition_strings(partition_string_column const* columns,
         return input_offsets[row + 1] - input_offsets[row];
       });
   };
-  auto const max_chars   = *std::max_element(char_sizes.begin(), char_sizes.end());
   std::size_t temp_bytes = 0;
   if (max_chars > 0) {
     CUDF_CUDA_TRY(cub::DeviceScan::ExclusiveSum(nullptr,
