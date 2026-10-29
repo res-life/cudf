@@ -25,6 +25,7 @@
 #include <cub/device/device_scan.cuh>
 #include <cuda/buffer>
 #include <cuda/iterator>
+#include <cuda/std/cstddef>
 #include <cuda/stream>
 
 #include <algorithm>
@@ -47,7 +48,7 @@ CUDF_KERNEL void invert_partition_map(size_type const* gather_map,
                                       size_type* scatter_map,
                                       size_type num_rows)
 {
-  auto const row = static_cast<std::size_t>(blockIdx.x) * blockDim.x + threadIdx.x;
+  auto const row = static_cast<cuda::std::size_t>(blockIdx.x) * blockDim.x + threadIdx.x;
   if (row < num_rows) { scatter_map[gather_map[row]] = static_cast<size_type>(row); }
 }
 
@@ -56,7 +57,7 @@ CUDF_KERNEL void partition_string_sizes(partition_string_column const* columns,
                                         size_type num_rows,
                                         size_type* sizes)
 {
-  auto const column = static_cast<std::size_t>(blockIdx.x) * blockDim.x + threadIdx.x;
+  auto const column = static_cast<cuda::std::size_t>(blockIdx.x) * blockDim.x + threadIdx.x;
   if (column < num_columns) {
     sizes[column] = columns[column].input_offsets[num_rows] - columns[column].input_offsets[0];
   }
@@ -71,8 +72,9 @@ CUDF_KERNEL void copy_partition_strings(partition_string_column const* columns,
 {
   auto const lane   = threadIdx.x % lanes_per_string;
   auto const column = columns[blockIdx.y];
-  auto row = (static_cast<std::size_t>(blockIdx.x) * blockDim.x + threadIdx.x) / lanes_per_string;
-  auto const stride = static_cast<std::size_t>(gridDim.x) * blockDim.x / lanes_per_string;
+  auto row =
+    (static_cast<cuda::std::size_t>(blockIdx.x) * blockDim.x + threadIdx.x) / lanes_per_string;
+  auto const stride = static_cast<cuda::std::size_t>(gridDim.x) * blockDim.x / lanes_per_string;
   for (; row < num_rows; row += stride) {
     auto const source = column.input_offsets[row];
     auto const length = column.input_offsets[row + 1] - source;
