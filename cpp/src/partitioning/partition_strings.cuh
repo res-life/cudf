@@ -127,7 +127,7 @@ CUDF_KERNEL void copy_partition_strings(partition_string_column const* columns,
   cuda::device_buffer<size_type> device_sizes(stream, temp_mr, columns, cuda::no_init);
   partition_string_sizes<<<(columns + 255) / 256, 256, 0, stream.get()>>>(
     device_columns.data(), columns, rows, device_sizes.data());
-  auto const char_sizes         = cudf::detail::make_std_vector(device_sizes, stream);
+  auto const char_sizes         = cudf::detail::make_pinned_vector(device_sizes, stream);
   auto const offset64_threshold = cudf::strings::get_offset64_threshold();
   if (std::any_of(char_sizes.begin(), char_sizes.end(), [offset64_threshold](auto size) {
         return size >= offset64_threshold;
