@@ -96,6 +96,11 @@ __device__ uint32_t get_u32(byte_stream_s* bs)
   return v;
 }
 
+inline __device__ void skip_u32(byte_stream_s* bs)
+{
+  while (getb(bs) & 0x80) {}
+}
+
 /**
  * @brief Decode signed integer from a byte stream using zigzag encoding
  *
@@ -314,6 +319,36 @@ struct ParquetFieldInt32 {
 };
 
 /**
+ * @brief Skip an integer field without constructing its value
+ */
+struct ParquetFieldSkipInt32 {
+  int field;
+
+  explicit __device__ ParquetFieldSkipInt32(int f) : field(f) {}
+
+  inline __device__ bool operator()(byte_stream_s* bs, int field_type)
+  {
+    skip_u32(bs);
+    return (static_cast<FieldType>(field_type) != FieldType::I32);
+  }
+};
+
+/**
+ * @brief Validate and skip a Boolean field, whose value is encoded in its field type
+ */
+struct ParquetFieldSkipBool {
+  int field;
+
+  explicit __device__ ParquetFieldSkipBool(int f) : field(f) {}
+
+  inline __device__ bool operator()(byte_stream_s*, int field_type)
+  {
+    return not(static_cast<FieldType>(field_type) == FieldType::BOOLEAN_TRUE or
+               static_cast<FieldType>(field_type) == FieldType::BOOLEAN_FALSE);
+  }
+};
+
+/**
  * @brief Functor to set value to enum read from byte stream
  *
  * @return True if field type is not int32
@@ -410,6 +445,8 @@ struct FunctionSwitchImpl<0> {
 template <typename... Operator>
 inline __device__ bool parse_header(cuda::std::tuple<Operator...>& op, byte_stream_s* bs)
 {
+  // FunctionSwitchImpl visits the tuple from back to front. Parser tuples are therefore ordered
+  // by descending field number so the required low-numbered fields take the shortest path.
   constexpr int index = cuda::std::tuple_size<cuda::std::tuple<Operator...>>::value - 1;
   int field           = 0;
   while (true) {
@@ -435,10 +472,54 @@ struct parse_data_page_header_fn {
   __device__ bool operator()(byte_stream_s* bs)
   {
     auto op =
-      cuda::std::make_tuple(ParquetFieldInt32(1, bs->page.num_input_values),
-                            ParquetFieldEnum<Encoding>(2, bs->page.encoding),
+      cuda::std::make_tuple(ParquetFieldEnum<Encoding>(4, bs->page.repetition_level_encoding),
                             ParquetFieldEnum<Encoding>(3, bs->page.definition_level_encoding),
-                            ParquetFieldEnum<Encoding>(4, bs->page.repetition_level_encoding));
+                            ParquetFieldEnum<Encoding>(2, bs->page.encoding),
+                            ParquetFieldInt32(1, bs->page.num_input_values));
+    return parse_header(op, bs);
+  }
+};
+
+/**
+ * @brief Functor to parse only the number of values from a data page header
+ *
+ * Used by the page-count pass, which does not consume the remaining page metadata.
+ */
+struct parse_data_page_count_fn {
+  __device__ bool operator()(byte_stream_s* bs)
+  {
+    auto op = cuda::std::make_tuple(ParquetFieldSkipInt32(4),
+                                    ParquetFieldSkipInt32(3),
+                                    ParquetFieldSkipInt32(2),
+                                    ParquetFieldInt32(1, bs->page.num_input_values));
+    return parse_header(op, bs);
+  }
+};
+
+/**
+ * @brief Functor to skip dictionary page fields during the page-count pass
+ */
+struct parse_dictionary_page_count_fn {
+  __device__ bool operator()(byte_stream_s* bs)
+  {
+    auto op = cuda::std::make_tuple(ParquetFieldSkipInt32(2), ParquetFieldSkipInt32(1));
+    return parse_header(op, bs);
+  }
+};
+
+/**
+ * @brief Functor to parse only the number of values from a V2 data page header
+ */
+struct parse_data_page_count_v2_fn {
+  __device__ bool operator()(byte_stream_s* bs)
+  {
+    auto op = cuda::std::make_tuple(ParquetFieldSkipBool(7),
+                                    ParquetFieldSkipInt32(6),
+                                    ParquetFieldSkipInt32(5),
+                                    ParquetFieldSkipInt32(4),
+                                    ParquetFieldSkipInt32(3),
+                                    ParquetFieldSkipInt32(2),
+                                    ParquetFieldInt32(1, bs->page.num_input_values));
     return parse_header(op, bs);
   }
 };
@@ -453,8 +534,8 @@ struct parse_data_page_header_fn {
 struct parse_dictionary_page_header_fn {
   __device__ bool operator()(byte_stream_s* bs)
   {
-    auto op = cuda::std::make_tuple(ParquetFieldInt32(1, bs->page.num_input_values),
-                                    ParquetFieldEnum<Encoding>(2, bs->page.encoding));
+    auto op = cuda::std::make_tuple(ParquetFieldEnum<Encoding>(2, bs->page.encoding),
+                                    ParquetFieldInt32(1, bs->page.num_input_values));
     return parse_header(op, bs);
   }
 };
@@ -470,13 +551,13 @@ struct parse_data_page_header_v2_fn {
   __device__ bool operator()(byte_stream_s* bs)
   {
     auto op =
-      cuda::std::make_tuple(ParquetFieldInt32(1, bs->page.num_input_values),
-                            ParquetFieldInt32(2, bs->page.num_nulls),
-                            ParquetFieldInt32(3, bs->page.num_rows),
-                            ParquetFieldEnum<Encoding>(4, bs->page.encoding),
-                            ParquetFieldInt32(5, bs->page.lvl_bytes[level_type::DEFINITION]),
+      cuda::std::make_tuple(ParquetFieldBool(7, bs->page.is_compressed),
                             ParquetFieldInt32(6, bs->page.lvl_bytes[level_type::REPETITION]),
-                            ParquetFieldBool(7, bs->page.is_compressed));
+                            ParquetFieldInt32(5, bs->page.lvl_bytes[level_type::DEFINITION]),
+                            ParquetFieldEnum<Encoding>(4, bs->page.encoding),
+                            ParquetFieldInt32(3, bs->page.num_rows),
+                            ParquetFieldInt32(2, bs->page.num_nulls),
+                            ParquetFieldInt32(1, bs->page.num_input_values));
     return parse_header(op, bs);
   }
 };
@@ -491,12 +572,28 @@ struct parse_data_page_header_v2_fn {
 struct parse_page_header_fn {
   __device__ bool operator()(byte_stream_s* bs)
   {
-    auto op = cuda::std::make_tuple(ParquetFieldEnum<PageType>(1, bs->page_type),
-                                    ParquetFieldInt32(2, bs->page.uncompressed_page_size),
-                                    ParquetFieldInt32(3, bs->page.compressed_page_size),
-                                    ParquetFieldStruct<parse_data_page_header_fn>(5),
+    auto op = cuda::std::make_tuple(ParquetFieldStruct<parse_data_page_header_v2_fn>(8),
                                     ParquetFieldStruct<parse_dictionary_page_header_fn>(7),
-                                    ParquetFieldStruct<parse_data_page_header_v2_fn>(8));
+                                    ParquetFieldStruct<parse_data_page_header_fn>(5),
+                                    ParquetFieldInt32(3, bs->page.compressed_page_size),
+                                    ParquetFieldInt32(2, bs->page.uncompressed_page_size),
+                                    ParquetFieldEnum<PageType>(1, bs->page_type));
+    return parse_header(op, bs);
+  }
+};
+
+/**
+ * @brief Functor to parse the subset of page header fields needed to count pages
+ */
+struct parse_page_count_fn {
+  __device__ bool operator()(byte_stream_s* bs)
+  {
+    auto op = cuda::std::make_tuple(ParquetFieldStruct<parse_data_page_count_v2_fn>(8),
+                                    ParquetFieldStruct<parse_dictionary_page_count_fn>(7),
+                                    ParquetFieldStruct<parse_data_page_count_fn>(5),
+                                    ParquetFieldInt32(3, bs->page.compressed_page_size),
+                                    ParquetFieldSkipInt32(2),
+                                    ParquetFieldEnum<PageType>(1, bs->page_type));
     return parse_header(op, bs);
   }
 };
@@ -510,6 +607,13 @@ struct parse_page_header_fn {
 inline __device__ bool parse_valid_page_header(byte_stream_s* bs)
 {
   return parse_page_header_fn{}(bs) and
+         (bs->page.compressed_page_size > 0 or
+          (bs->page.compressed_page_size == 0 and bs->page_type == PageType::DICTIONARY_PAGE));
+}
+
+inline __device__ bool parse_valid_page_count(byte_stream_s* bs)
+{
+  return parse_page_count_fn{}(bs) and
          (bs->page.compressed_page_size > 0 or
           (bs->page.compressed_page_size == 0 and bs->page_type == PageType::DICTIONARY_PAGE));
 }
@@ -552,27 +656,22 @@ void __launch_bounds__(decode_page_headers_block_size)
     static_cast<cudf::size_type>((cg::this_grid().block_rank() * num_warps_per_block) + warp_id);
   auto const num_chunks = static_cast<cudf::size_type>(chunks.size());
 
-  if (chunk_idx >= num_chunks) { return; }
+  // Page-header locations are serially dependent, so only one lane can parse a chunk.
+  if (chunk_idx >= num_chunks or lane_id != 0) { return; }
 
   __shared__ byte_stream_s bs_g[num_warps_per_block];
   __shared__ kernel_error::value_type error[num_warps_per_block];
 
   auto const bs = &bs_g[warp_id];
 
-  cg::invoke_one(warp, [&]() {
-    bs->ck         = chunks[chunk_idx];
-    error[warp_id] = 0;
-  });
-  warp.sync();
-
-  cg::invoke_one(warp, [&]() {
-    bs->base = bs->cur = bs->ck.compressed_data;
-    bs->end            = bs->base + bs->ck.compressed_size;
-    // Clear page header info before writing known fields
-    zero_out_page_header_info(bs);
-    bs->page.chunk_idx      = chunk_idx;
-    bs->page.src_col_schema = bs->ck.src_col_schema;
-  });
+  bs->ck         = chunks[chunk_idx];
+  error[warp_id] = 0;
+  bs->base = bs->cur = bs->ck.compressed_data;
+  bs->end            = bs->base + bs->ck.compressed_size;
+  // Clear page header info before writing known fields
+  zero_out_page_header_info(bs);
+  bs->page.chunk_idx             = chunk_idx;
+  bs->page.src_col_schema        = bs->ck.src_col_schema;
   size_t const num_values        = bs->ck.num_values;
   size_t values_found            = 0;
   uint32_t data_page_count       = 0;
@@ -580,82 +679,68 @@ void __launch_bounds__(decode_page_headers_block_size)
   auto* page_info                = chunk_pages[chunk_idx].pages;
   auto const max_num_pages       = bs->ck.num_data_pages + bs->ck.num_dict_pages;
   auto const num_dict_pages      = bs->ck.num_dict_pages;
-  warp.sync();
 
   while (values_found < num_values and bs->cur < bs->end) {
     int index_out = -1;
-    // Let all threads read before `parse_page_header_fn{}`
-    warp.sync();
-
-    // Must be lane 0 here as `shuffle(values_found)` assumes lane 0 is the root
-    if (lane_id == 0) {
-      // this computation is only valid for flat schemas. for nested schemas,
-      // they will be recomputed in the preprocess step by examining repetition and
-      // definition levels
-      bs->page.chunk_row += bs->page.num_rows;
-      bs->page.num_rows      = 0;
-      bs->page.flags         = 0;
-      bs->page.str_bytes     = 0;
-      bs->page.str_bytes_all = 0;
-      // zero out V2 info
-      bs->page.is_compressed                     = true;
-      bs->page.num_nulls                         = 0;
-      bs->page.lvl_bytes[level_type::DEFINITION] = 0;
-      bs->page.lvl_bytes[level_type::REPETITION] = 0;
-      if (parse_valid_page_header(bs)) {
-        if (not is_supported_encoding(bs->page.encoding)) {
-          error[warp_id] |=
-            static_cast<kernel_error::value_type>(decode_error::UNSUPPORTED_ENCODING);
-        }
-        switch (bs->page_type) {
-          case PageType::DATA_PAGE:
-            index_out = num_dict_pages + data_page_count;
-            data_page_count++;
-            // this computation is only valid for flat schemas. for nested schemas,
-            // they will be recomputed in the preprocess step by examining repetition and
-            // definition levels
-            bs->page.num_rows = bs->page.num_input_values;
-            values_found += bs->page.num_input_values;
-            break;
-          case PageType::DATA_PAGE_V2:
-            index_out = num_dict_pages + data_page_count;
-            data_page_count++;
-            bs->page.flags |= PAGEINFO_FLAGS_V2;
-            values_found += bs->page.num_input_values;
-            // V2 only uses RLE, so it was removed from the header
-            bs->page.definition_level_encoding = Encoding::RLE;
-            bs->page.repetition_level_encoding = Encoding::RLE;
-            break;
-          case PageType::DICTIONARY_PAGE:
-            index_out = dictionary_page_count;
-            dictionary_page_count++;
-            bs->page.flags |= PAGEINFO_FLAGS_DICTIONARY;
-            break;
-          default:
-            error[warp_id] |=
-              static_cast<kernel_error::value_type>(decode_error::INVALID_PAGE_TYPE);
-            bs->cur = bs->end;
-            break;
-        }
-        bs->page.page_data = const_cast<uint8_t*>(bs->cur);
-        bs->cur += bs->page.compressed_page_size;
-        if (bs->cur > bs->end) {
-          error[warp_id] |=
-            static_cast<kernel_error::value_type>(decode_error::DATA_STREAM_OVERRUN);
-        }
-        bs->page.kernel_mask = kernel_mask_for_page(bs->page, bs->ck);
-      } else {
-        error[warp_id] |= static_cast<kernel_error::value_type>(decode_error::INVALID_PAGE_HEADER);
-        bs->cur = bs->end;
+    // this computation is only valid for flat schemas. for nested schemas,
+    // they will be recomputed in the preprocess step by examining repetition and
+    // definition levels
+    bs->page.chunk_row += bs->page.num_rows;
+    bs->page.num_rows      = 0;
+    bs->page.flags         = 0;
+    bs->page.str_bytes     = 0;
+    bs->page.str_bytes_all = 0;
+    // zero out V2 info
+    bs->page.is_compressed                     = true;
+    bs->page.num_nulls                         = 0;
+    bs->page.lvl_bytes[level_type::DEFINITION] = 0;
+    bs->page.lvl_bytes[level_type::REPETITION] = 0;
+    if (parse_valid_page_header(bs)) {
+      if (not is_supported_encoding(bs->page.encoding)) {
+        error[warp_id] |= static_cast<kernel_error::value_type>(decode_error::UNSUPPORTED_ENCODING);
       }
-      if (index_out >= 0 and index_out < max_num_pages) { page_info[index_out] = bs->page; }
+      switch (bs->page_type) {
+        case PageType::DATA_PAGE:
+          index_out = num_dict_pages + data_page_count;
+          data_page_count++;
+          // this computation is only valid for flat schemas. for nested schemas,
+          // they will be recomputed in the preprocess step by examining repetition and
+          // definition levels
+          bs->page.num_rows = bs->page.num_input_values;
+          values_found += bs->page.num_input_values;
+          break;
+        case PageType::DATA_PAGE_V2:
+          index_out = num_dict_pages + data_page_count;
+          data_page_count++;
+          bs->page.flags |= PAGEINFO_FLAGS_V2;
+          values_found += bs->page.num_input_values;
+          // V2 only uses RLE, so it was removed from the header
+          bs->page.definition_level_encoding = Encoding::RLE;
+          bs->page.repetition_level_encoding = Encoding::RLE;
+          break;
+        case PageType::DICTIONARY_PAGE:
+          index_out = dictionary_page_count;
+          dictionary_page_count++;
+          bs->page.flags |= PAGEINFO_FLAGS_DICTIONARY;
+          break;
+        default:
+          error[warp_id] |= static_cast<kernel_error::value_type>(decode_error::INVALID_PAGE_TYPE);
+          bs->cur = bs->end;
+          break;
+      }
+      bs->page.page_data = const_cast<uint8_t*>(bs->cur);
+      bs->cur += bs->page.compressed_page_size;
+      if (bs->cur > bs->end) {
+        error[warp_id] |= static_cast<kernel_error::value_type>(decode_error::DATA_STREAM_OVERRUN);
+      }
+      bs->page.kernel_mask = kernel_mask_for_page(bs->page, bs->ck);
+    } else {
+      error[warp_id] |= static_cast<kernel_error::value_type>(decode_error::INVALID_PAGE_HEADER);
+      bs->cur = bs->end;
     }
-    values_found = shuffle(values_found);
-    warp.sync();
+    if (index_out >= 0 and index_out < max_num_pages) { page_info[index_out] = bs->page; }
   }
-  cg::invoke_one(warp, [&]() {
-    if (error[warp_id] != 0) { set_error(error[warp_id], error_code); }
-  });
+  if (error[warp_id] != 0) { set_error(error[warp_id], error_code); }
 }
 
 /**
@@ -679,69 +764,55 @@ CUDF_KERNEL void __launch_bounds__(count_page_headers_block_size)
     static_cast<cudf::size_type>((cg::this_grid().block_rank() * num_warps_per_block) + warp_id);
   auto const num_chunks = static_cast<cudf::size_type>(chunks.size());
 
-  if (chunk_idx >= num_chunks) { return; }
+  // Page-header locations are serially dependent, so only one lane can parse a chunk.
+  if (chunk_idx >= num_chunks or lane_id != 0) { return; }
 
   __shared__ byte_stream_s bs_g[num_warps_per_block];
   __shared__ kernel_error::value_type error[num_warps_per_block];
 
   auto const bs = &bs_g[warp_id];
 
-  cg::invoke_one(warp, [&] {
-    bs->ck         = chunks[chunk_idx];
-    error[warp_id] = 0;
-    bs->base = bs->cur = bs->ck.compressed_data;
-    bs->end            = bs->base + bs->ck.compressed_size;
-  });
-  warp.sync();
+  bs->ck         = chunks[chunk_idx];
+  error[warp_id] = 0;
+  bs->base = bs->cur             = bs->ck.compressed_data;
+  bs->end                        = bs->base + bs->ck.compressed_size;
   size_t const num_values        = bs->ck.num_values;
   size_t values_found            = 0;
   uint32_t data_page_count       = 0;
   uint32_t dictionary_page_count = 0;
-  warp.sync();
   while (values_found < num_values and bs->cur < bs->end) {
-    // Let all threads read before `parse_page_header_fn{}`
-    warp.sync();
-    // Must be lane 0 here as `shuffle(values_found)` assumes lane 0 is the root
-    if (lane_id == 0) {
-      if (parse_valid_page_header(bs)) {
-        if (not is_supported_encoding(bs->page.encoding)) {
-          error[warp_id] |=
-            static_cast<kernel_error::value_type>(decode_error::UNSUPPORTED_ENCODING);
-        }
-        switch (bs->page_type) {
-          case PageType::DATA_PAGE:
-            data_page_count++;
-            values_found += bs->page.num_input_values;
-            break;
-          case PageType::DATA_PAGE_V2:
-            data_page_count++;
-            values_found += bs->page.num_input_values;
-            break;
-          case PageType::DICTIONARY_PAGE: dictionary_page_count++; break;
-          default:
-            error[warp_id] |=
-              static_cast<kernel_error::value_type>(decode_error::INVALID_PAGE_TYPE);
-            bs->cur = bs->end;
-            break;
-        }
-        bs->cur += bs->page.compressed_page_size;
-        if (bs->cur > bs->end) {
-          error[warp_id] |=
-            static_cast<kernel_error::value_type>(decode_error::DATA_STREAM_OVERRUN);
-        }
-      } else {
-        error[warp_id] |= static_cast<kernel_error::value_type>(decode_error::INVALID_PAGE_HEADER);
-        bs->cur = bs->end;
+    bs->page.compressed_page_size = 0;
+    bs->page.num_input_values     = 0;
+    // Encoding is decoded and validated by the output pass. The count pass only needs enough
+    // metadata to locate pages and size the output allocation.
+    if (parse_valid_page_count(bs)) {
+      switch (bs->page_type) {
+        case PageType::DATA_PAGE:
+          data_page_count++;
+          values_found += bs->page.num_input_values;
+          break;
+        case PageType::DATA_PAGE_V2:
+          data_page_count++;
+          values_found += bs->page.num_input_values;
+          break;
+        case PageType::DICTIONARY_PAGE: dictionary_page_count++; break;
+        default:
+          error[warp_id] |= static_cast<kernel_error::value_type>(decode_error::INVALID_PAGE_TYPE);
+          bs->cur = bs->end;
+          break;
       }
+      bs->cur += bs->page.compressed_page_size;
+      if (bs->cur > bs->end) {
+        error[warp_id] |= static_cast<kernel_error::value_type>(decode_error::DATA_STREAM_OVERRUN);
+      }
+    } else {
+      error[warp_id] |= static_cast<kernel_error::value_type>(decode_error::INVALID_PAGE_HEADER);
+      bs->cur = bs->end;
     }
-    values_found = shuffle(values_found);
-    warp.sync();
   }
-  cg::invoke_one(warp, [&] {
-    chunks[chunk_idx].num_data_pages = data_page_count;
-    chunks[chunk_idx].num_dict_pages = dictionary_page_count;
-    if (error[warp_id] != 0) { set_error(error[warp_id], error_code); }
-  });
+  chunks[chunk_idx].num_data_pages = data_page_count;
+  chunks[chunk_idx].num_dict_pages = dictionary_page_count;
+  if (error[warp_id] != 0) { set_error(error[warp_id], error_code); }
 }
 
 /**
