@@ -131,6 +131,37 @@ void run_partition_test(cudf::table_view table_to_partition,
 }
 
 // Normal cases
+TYPED_TEST(PartitionTest, SingleFixedWidthTileBoundaries)
+{
+  using value_type = cudf::test::GetType<TypeParam, 0>;
+  using map_type   = cudf::test::GetType<TypeParam, 1>;
+
+  for (auto const rows : {1024, 1025}) {
+    for (auto const hot : {false, true}) {
+      SCOPED_TRACE(::testing::Message() << rows << "/" << hot);
+      auto const values = cudf::detail::make_counting_transform_iterator(
+        0, [](auto i) { return (i * 37 + 11) % 97; });
+      fixed_width_column_wrapper<value_type, int32_t> data(values, values + rows + 7);
+      auto const input = cudf::slice(cudf::table_view{{data}}, {7, rows + 7})[0];
+      std::vector<map_type> map(rows + 3, 0);
+      std::vector<int32_t> expected_values;
+      std::vector<cudf::size_type> offsets{0};
+      for (cudf::size_type p = 0; p < 2; ++p) {
+        for (cudf::size_type i = 0; i < rows; ++i) {
+          map[i + 3] = hot ? 1 : i % 2;
+          if (map[i + 3] == static_cast<map_type>(p)) { expected_values.push_back(values[i + 7]); }
+        }
+        offsets.push_back(expected_values.size());
+      }
+      fixed_width_column_wrapper<map_type> map_column(map.begin(), map.end());
+      auto const map_view = cudf::slice(map_column, {3, rows + 3})[0];
+      fixed_width_column_wrapper<value_type, int32_t> expected(expected_values.begin(),
+                                                               expected_values.end());
+      run_partition_test(input, map_view, 2, cudf::table_view{{expected}}, offsets);
+    }
+  }
+}
+
 TYPED_TEST(PartitionTest, Identity)
 {
   using value_type = cudf::test::GetType<TypeParam, 0>;
@@ -292,6 +323,32 @@ template <typename MapType>
 struct PartitionMapRanksTest : public cudf::test::BaseFixture {};
 
 TYPED_TEST_SUITE(PartitionMapRanksTest, cudf::test::IntegralTypesNotBool);
+
+TEST_F(PartitionTestNotTyped, SingleFixedWidthManyPartitions)
+{
+  constexpr cudf::size_type rows = 4099;
+  auto const ids = cudf::detail::make_counting_transform_iterator(0, [](auto i) { return i; });
+  fixed_width_column_wrapper<int64_t> data(ids, ids + rows);
+  for (auto const partitions : {200, 256, 257}) {
+    for (auto const hot : {false, true}) {
+      SCOPED_TRACE(::testing::Message() << partitions << "/" << hot);
+      std::vector<int32_t> map(rows);
+      std::vector<int64_t> expected_values;
+      std::vector<cudf::size_type> offsets{0};
+      for (cudf::size_type p = 0; p < partitions; ++p) {
+        for (cudf::size_type i = 0; i < rows; ++i) {
+          map[i] = hot ? partitions - 1 : (i * 17 + 3) % partitions;
+          if (map[i] == p) { expected_values.push_back(i); }
+        }
+        offsets.push_back(expected_values.size());
+      }
+      fixed_width_column_wrapper<int32_t> map_column(map.begin(), map.end());
+      fixed_width_column_wrapper<int64_t> expected(expected_values.begin(), expected_values.end());
+      run_partition_test(
+        cudf::table_view{{data}}, map_column, partitions, cudf::table_view{{expected}}, offsets);
+    }
+  }
+}
 
 TYPED_TEST(PartitionMapRanksTest, TileBoundariesAndSkew)
 {

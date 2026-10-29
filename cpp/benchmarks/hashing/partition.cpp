@@ -447,8 +447,12 @@ void bench_partition_map(nvbench::state& state)
     input = make_input_table(std::array{cudf::type_id::INT8}, {}, rows);
   } else if (layout == "int16") {
     input = make_input_table(std::array{cudf::type_id::INT16}, {}, rows);
+  } else if (layout == "int32") {
+    input = make_input_table(std::array{cudf::type_id::INT32}, {}, rows);
   } else if (layout == "int64") {
     input = make_input_table(std::array{cudf::type_id::INT64}, {}, rows);
+  } else if (layout == "decimal128") {
+    input = make_input_table(std::array{cudf::type_id::DECIMAL128}, {}, rows);
   } else if (layout == "strings10") {
     input = make_input_table({}, std::vector<cudf::type_id>(10, cudf::type_id::STRING), rows);
   } else if (layout == "mixed_nullable") {
@@ -468,10 +472,11 @@ void bench_partition_map(nvbench::state& state)
 
 NVBENCH_BENCH(bench_partition_map)
   .set_name("partition_map")
-  .add_int64_axis("num_rows", {1024, 1 << 20, 1 << 23})
+  .add_int64_axis("num_rows", {1024, 1 << 20, 1 << 23, 10'000'000})
   .add_int64_axis("num_partitions", {2, 100, 200, 256, 257})
   .add_int64_axis("hot_partition", {0, 1})
-  .add_string_axis("layout", {"int8", "int16", "int64", "strings10", "mixed_nullable"});
+  .add_string_axis(
+    "layout", {"int8", "int16", "int32", "int64", "decimal128", "strings10", "mixed_nullable"});
 
 NVBENCH_BENCH_TYPES(bench_hash_partition_analytic,
                     NVBENCH_TYPE_AXES(nvbench::type_list<std::int32_t, std::int64_t>))

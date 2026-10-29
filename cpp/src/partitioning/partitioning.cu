@@ -20,6 +20,8 @@
 #include <cudf/utilities/default_stream.hpp>
 #include <cudf/utilities/memory_resource.hpp>
 #include <cudf/utilities/span.hpp>
+#include <cudf/utilities/traits.hpp>
+#include <cudf/utilities/type_dispatcher.hpp>
 
 #include <rmm/device_uvector.hpp>
 #include <rmm/exec_policy.hpp>
@@ -838,15 +840,16 @@ CUDF_KERNEL void partition_map_local_ranks(MapType const* partition_map,
   }
 }
 
-template <typename MapType>
-CUDF_KERNEL void partition_map_gather_indices(MapType const* partition_map,
-                                              uint16_t const* local_ranks,
-                                              size_type const* block_offsets,
-                                              size_type num_rows,
-                                              size_type num_blocks,
-                                              size_type num_partitions,
-                                              size_type* gather_map,
-                                              size_type* partition_offsets)
+template <typename MapType, typename InputIterator, typename OutputIterator>
+CUDF_KERNEL void partition_map_scatter(MapType const* partition_map,
+                                       uint16_t const* local_ranks,
+                                       size_type const* block_offsets,
+                                       size_type num_rows,
+                                       size_type num_blocks,
+                                       size_type num_partitions,
+                                       InputIterator input,
+                                       OutputIterator output,
+                                       size_type* partition_offsets)
 {
   __shared__ size_type partition_bases[MAP_PARTITION_MAX_BINS];
   if (threadIdx.x < num_partitions) {
@@ -863,25 +866,23 @@ CUDF_KERNEL void partition_map_gather_indices(MapType const* partition_map,
     auto const row = static_cast<cuda::std::size_t>(blockIdx.x) * MAP_PARTITION_TILE_SIZE +
                      item * MAP_PARTITION_BLOCK_SIZE + threadIdx.x;
     if (row < num_rows) {
-      auto const partition    = static_cast<size_type>(partition_map[row]);
-      auto const destination  = partition_bases[partition] + local_ranks[row];
-      gather_map[destination] = static_cast<size_type>(row);
+      auto const partition   = static_cast<size_type>(partition_map[row]);
+      auto const destination = partition_bases[partition] + local_ranks[row];
+      output[destination]    = input[row];
     }
   }
 }
 
-template <typename MapType>
-std::pair<std::unique_ptr<table>, std::vector<size_type>> partition_with_block_ranks(
-  table_view const& input,
-  column_view const& partition_map,
-  size_type num_partitions,
-  cuda::stream_ref stream,
-  rmm::device_async_resource_ref mr)
+template <typename MapType, typename InputIterator, typename OutputIterator>
+std::vector<size_type> scatter_with_block_ranks(column_view const& partition_map,
+                                                size_type num_partitions,
+                                                InputIterator input,
+                                                OutputIterator output,
+                                                cuda::stream_ref stream)
 {
-  auto const num_rows   = input.num_rows();
+  auto const num_rows   = partition_map.size();
   auto const num_blocks = (num_rows - 1) / MAP_PARTITION_TILE_SIZE + 1;
   auto const temp_mr    = cudf::get_current_device_resource_ref();
-  cuda::device_buffer<size_type> gather_map(stream, temp_mr, num_rows, cuda::no_init);
   std::vector<size_type> partition_offsets;
   {
     cuda::device_buffer<uint16_t> local_ranks(stream, temp_mr, num_rows, cuda::no_init);
@@ -901,19 +902,74 @@ std::pair<std::unique_ptr<table>, std::vector<size_type>> partition_with_block_r
                            block_offsets.begin(),
                            block_offsets.end(),
                            block_offsets.begin());
-    partition_map_gather_indices<<<num_blocks, MAP_PARTITION_BLOCK_SIZE, 0, stream.get()>>>(
+    partition_map_scatter<<<num_blocks, MAP_PARTITION_BLOCK_SIZE, 0, stream.get()>>>(
       partition_map.begin<MapType>(),
       local_ranks.data(),
       block_offsets.data(),
       num_rows,
       num_blocks,
       num_partitions,
-      gather_map.data(),
+      input,
+      output,
       offsets.data());
     CUDF_CUDA_TRY(cudaPeekAtLastError());
     auto const pinned_offsets = cudf::detail::make_pinned_vector(offsets, stream);
     partition_offsets.assign(pinned_offsets.begin(), pinned_offsets.end());
   }
+  return partition_offsets;
+}
+
+template <typename MapType>
+struct partition_single_column {
+  template <typename T>
+  std::pair<std::unique_ptr<table>, std::vector<size_type>> operator()(
+    column_view const& input,
+    column_view const& partition_map,
+    size_type num_partitions,
+    cuda::stream_ref stream,
+    rmm::device_async_resource_ref mr) const
+  {
+    if constexpr (cudf::is_fixed_width<T>()) {
+      auto output  = cudf::allocate_like(input, mask_allocation_policy::NEVER, stream, mr);
+      auto offsets = scatter_with_block_ranks<MapType>(
+        partition_map, num_partitions, input.begin<T>(), output->mutable_view().begin<T>(), stream);
+      std::vector<std::unique_ptr<column>> columns;
+      columns.push_back(std::move(output));
+      return {std::make_unique<table>(std::move(columns)), std::move(offsets)};
+    } else {
+      CUDF_FAIL("Expected a fixed-width column");
+    }
+  }
+};
+
+template <typename MapType>
+std::pair<std::unique_ptr<table>, std::vector<size_type>> partition_with_block_ranks(
+  table_view const& input,
+  column_view const& partition_map,
+  size_type num_partitions,
+  cuda::stream_ref stream,
+  rmm::device_async_resource_ref mr)
+{
+  // A single non-nullable fixed-width column can be scattered directly, avoiding the
+  // gather map and the subsequent gather of its payload.
+  if (input.num_columns() == 1 && is_fixed_width(input.column(0).type()) &&
+      !input.column(0).nullable()) {
+    return type_dispatcher<dispatch_storage_type>(input.column(0).type(),
+                                                  partition_single_column<MapType>{},
+                                                  input.column(0),
+                                                  partition_map,
+                                                  num_partitions,
+                                                  stream,
+                                                  mr);
+  }
+  cuda::device_buffer<size_type> gather_map(
+    stream, cudf::get_current_device_resource_ref(), input.num_rows(), cuda::no_init);
+  auto partition_offsets =
+    scatter_with_block_ranks<MapType>(partition_map,
+                                      num_partitions,
+                                      cuda::make_counting_iterator(size_type{0}),
+                                      gather_map.data(),
+                                      stream);
   auto output =
     cudf::detail::gather(input,
                          device_span<size_type const>{gather_map.data(), gather_map.size()},
@@ -929,7 +985,8 @@ struct dispatch_map_type {
    * @brief Partitions the table `t` according to the `partition_map`.
    *
    * For a small partition count and at least one full tile, compute warp-local
-   * ranks and scan block histograms to build a gather map without per-row global atomics.
+   * ranks and scan block histograms to scatter a single fixed-width column or build a
+   * gather map without per-row global atomics.
    *
    * Otherwise:
    * - Compute the histogram of the size each partition
