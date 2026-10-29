@@ -1122,7 +1122,8 @@ CUDF_KERNEL void __launch_bounds__(decode_block_size_t, has_dict<kernel_mask_t>(
     (static_cast<uint32_t>(kernel_mask_t) & STRINGS_MASK_NON_DELTA) != 0;
   constexpr bool is_dict_int32_t = is_dict_int32_output<kernel_mask_t>();
 
-  constexpr int rolling_buf_size    = decode_block_size_t * 2;
+  constexpr int rolling_buf_size    = decode_block_size_t * (has_dict_t ? 4 : 2);
+  constexpr int dict_run_table_size = decode_block_size_t * 2;
   constexpr int rle_run_buffer_size = rle_stream_required_run_buffer_size<decode_block_size_t>();
 
   __shared__ __align__(16) full_page_decode_state state_g;
@@ -1173,7 +1174,7 @@ CUDF_KERNEL void __launch_bounds__(decode_block_size_t, has_dict<kernel_mask_t>(
   auto* const def = reinterpret_cast<level_t*>(pp->lvl_decode_buf[level_type::DEFINITION]);
   auto* const rep = reinterpret_cast<level_t*>(pp->lvl_decode_buf[level_type::REPETITION]);
 
-  rle_stream_chunked<uint32_t, decode_block_size_t, rolling_buf_size, rolling_buf_size, true>
+  rle_stream_chunked<uint32_t, decode_block_size_t, rolling_buf_size, dict_run_table_size, true>
     dict_stream{};
   if constexpr (has_dict_t) {
     dict_stream.init(block,
