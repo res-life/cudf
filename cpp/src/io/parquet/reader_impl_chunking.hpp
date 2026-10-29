@@ -91,6 +91,7 @@ struct subpass_intermediate_data {
       page_string_offset_indices(stream, cudf::get_current_device_resource_ref(), 0, cuda::no_init),
       string_offset_buffer(stream, cudf::get_current_device_resource_ref(), 0, cuda::no_init),
       delta_temp_buf(stream, cudf::get_current_device_resource_ref(), 0, cuda::no_init),
+      decode_page_buf(0, stream, cudf::get_current_device_resource_ref()),
       page_nesting_info(0, stream, cudf::get_current_device_resource_ref()),
       page_nesting_decode_info(0, stream, cudf::get_current_device_resource_ref())
   {
@@ -125,6 +126,9 @@ struct subpass_intermediate_data {
   // temporary space for DELTA_BYTE_ARRAY decoding. this only needs to live until
   // gpu::DecodeDeltaByteArray returns.
   cuda::device_buffer<uint8_t> delta_temp_buf;
+
+  // Compact page descriptors for output chunks that can decode a row-range subset independently.
+  cudf::detail::hostdevice_vector<PageInfo> decode_page_buf;
 
   // for each column in the file (indexed by _input_columns.size())
   // the number of associated pages for this subpass
