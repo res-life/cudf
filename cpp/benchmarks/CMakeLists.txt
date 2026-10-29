@@ -316,7 +316,8 @@ ConfigureNVBench(
 # * parquet reader chunks benchmark
 # ------------------------------------------------------------------
 ConfigureNVBench(
-  PARQUET_READER_CHUNKS_NVBENCH io/parquet/parquet_reader_chunks.cpp io/parquet/parquet_common.cpp
+  PARQUET_READER_CHUNKS_NVBENCH io/parquet/parquet_reader_chunks.cpp
+  io/parquet/parquet_reader_external_file.cpp io/parquet/parquet_common.cpp
 )
 
 # ##################################################################################################
