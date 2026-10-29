@@ -1135,10 +1135,10 @@ void reader_impl::update_output_nullmasks_for_pruned_pages(cudf::host_span<bool 
   auto const& chunks     = _pass_itm_data->chunks;
   auto const num_columns = _input_columns.size();
 
+  // An empty mask means all pages are required.
+  if (page_mask.empty()) { return; }
   CUDF_EXPECTS(pages.size() == page_mask.size(), "Page mask size mismatch");
-
-  // Return early if page mask is empty or all pages are required
-  if (page_mask.empty() or std::ranges::all_of(page_mask, std::identity{})) { return; }
+  if (std::ranges::all_of(page_mask, std::identity{})) { return; }
 
   auto page_and_mask_begin =
     cuda::make_zip_iterator(cuda::std::make_tuple(pages.host_begin(), page_mask.begin()));
