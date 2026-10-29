@@ -19,6 +19,7 @@
 #include <cudf/table/table_device_view.cuh>
 #include <cudf/utilities/default_stream.hpp>
 #include <cudf/utilities/memory_resource.hpp>
+#include <cudf/utilities/span.hpp>
 
 #include <rmm/device_uvector.hpp>
 #include <rmm/exec_policy.hpp>
@@ -913,14 +914,13 @@ std::pair<std::unique_ptr<table>, std::vector<size_type>> partition_with_block_r
     auto const pinned_offsets = cudf::detail::make_pinned_vector(offsets, stream);
     partition_offsets.assign(pinned_offsets.begin(), pinned_offsets.end());
   }
-  auto const gather_map_view =
-    column_view{data_type{type_id::INT32}, num_rows, gather_map.data(), nullptr, 0};
-  auto output = cudf::detail::gather(input,
-                                     gather_map_view,
-                                     out_of_bounds_policy::DONT_CHECK,
-                                     negative_index_policy::NOT_ALLOWED,
-                                     stream,
-                                     mr);
+  auto output =
+    cudf::detail::gather(input,
+                         device_span<size_type const>{gather_map.data(), gather_map.size()},
+                         out_of_bounds_policy::DONT_CHECK,
+                         negative_index_policy::NOT_ALLOWED,
+                         stream,
+                         mr);
   return {std::move(output), std::move(partition_offsets)};
 }
 
