@@ -1,11 +1,13 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2024-2025, NVIDIA CORPORATION.
+ * SPDX-FileCopyrightText: Copyright (c) 2024-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <cudf_test/base_fixture.hpp>
+#include <cudf_test/column_utilities.hpp>
 #include <cudf_test/column_wrapper.hpp>
 #include <cudf_test/default_stream.hpp>
+#include <cudf_test/table_utilities.hpp>
 #include <cudf_test/testing_main.hpp>
 #include <cudf_test/type_lists.hpp>
 
@@ -15,10 +17,37 @@
 #include <cudf/sorting.hpp>
 #include <cudf/table/table.hpp>
 
+#include <cstdint>
+#include <vector>
+
 using cudf::test::fixed_width_column_wrapper;
 using cudf::test::strings_column_wrapper;
 
 class PartitionTest : public cudf::test::BaseFixture {};
+
+TEST_F(PartitionTest, MapRanks)
+{
+  constexpr cudf::size_type rows = 1025;
+  auto const stream              = cudf::test::get_default_stream();
+  auto const ids = cudf::detail::make_counting_transform_iterator(0, [](auto i) { return i; });
+  auto const partitions =
+    cudf::detail::make_counting_transform_iterator(0, [](auto i) { return i % 2; });
+  fixed_width_column_wrapper<int32_t> data(ids, ids + rows, stream);
+  fixed_width_column_wrapper<int32_t> map(partitions, partitions + rows, stream);
+  for (auto const& input : {cudf::table_view{{data}}, cudf::table_view{{data, data}}}) {
+    SCOPED_TRACE(input.num_columns());
+    auto [output, offsets] = cudf::partition(input, map, 2, stream, mr());
+    ASSERT_EQ(offsets, (std::vector<cudf::size_type>{0, (rows + 1) / 2, rows}));
+    auto const [actual, mask] = cudf::test::to_host<int32_t>(output->get_column(0), stream);
+    for (cudf::size_type p = 0; p < 2; ++p) {
+      for (auto row = offsets[p]; row < offsets[p + 1]; ++row) {
+        EXPECT_EQ(actual[row] % 2, p);
+      }
+    }
+    auto sorted = cudf::sort(output->view(), {}, {}, stream, mr());
+    CUDF_TEST_EXPECT_TABLES_EQUAL(input, sorted->view(), stream);
+  }
+}
 
 TEST_F(PartitionTest, Struct)
 {

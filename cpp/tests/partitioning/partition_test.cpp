@@ -5,6 +5,7 @@
 #include <cudf_test/base_fixture.hpp>
 #include <cudf_test/column_utilities.hpp>
 #include <cudf_test/column_wrapper.hpp>
+#include <cudf_test/memory_resource_utilities.hpp>
 #include <cudf_test/table_utilities.hpp>
 #include <cudf_test/type_lists.hpp>
 
@@ -13,11 +14,20 @@
 #include <cudf/partitioning.hpp>
 #include <cudf/sorting.hpp>
 #include <cudf/table/table.hpp>
+#include <cudf/utilities/default_stream.hpp>
+
+#include <rmm/cuda_device.hpp>
+#include <rmm/mr/statistics_resource_adaptor.hpp>
 
 #include <cuda/iterator>
 #include <cuda/std/tuple>
+#include <cuda/stream>
 
 #include <algorithm>
+#include <cstdint>
+#include <limits>
+#include <numeric>
+#include <string>
 
 template <typename T>
 class PartitionTest : public cudf::test::BaseFixture {
@@ -123,6 +133,37 @@ void run_partition_test(cudf::table_view table_to_partition,
 }
 
 // Normal cases
+TYPED_TEST(PartitionTest, SingleFixedWidthTileBoundaries)
+{
+  using value_type = cudf::test::GetType<TypeParam, 0>;
+  using map_type   = cudf::test::GetType<TypeParam, 1>;
+
+  for (auto const rows : {1024, 1025}) {
+    for (auto const hot : {false, true}) {
+      SCOPED_TRACE(::testing::Message() << rows << "/" << hot);
+      auto const values = cudf::detail::make_counting_transform_iterator(
+        0, [](auto i) { return (i * 37 + 11) % 97; });
+      fixed_width_column_wrapper<value_type, int32_t> data(values, values + rows + 7);
+      auto const input = cudf::slice(cudf::table_view{{data}}, {7, rows + 7})[0];
+      std::vector<map_type> map(rows + 3, 0);
+      std::vector<int32_t> expected_values;
+      std::vector<cudf::size_type> offsets{0};
+      for (cudf::size_type p = 0; p < 2; ++p) {
+        for (cudf::size_type i = 0; i < rows; ++i) {
+          map[i + 3] = hot ? 1 : i % 2;
+          if (map[i + 3] == static_cast<map_type>(p)) { expected_values.push_back(values[i + 7]); }
+        }
+        offsets.push_back(expected_values.size());
+      }
+      fixed_width_column_wrapper<map_type> map_column(map.begin(), map.end());
+      auto const map_view = cudf::slice(map_column, {3, rows + 3})[0];
+      fixed_width_column_wrapper<value_type, int32_t> expected(expected_values.begin(),
+                                                               expected_values.end());
+      run_partition_test(input, map_view, 2, cudf::table_view{{expected}}, offsets);
+    }
+  }
+}
+
 TYPED_TEST(PartitionTest, Identity)
 {
   using value_type = cudf::test::GetType<TypeParam, 0>;
@@ -279,6 +320,161 @@ TYPED_TEST(PartitionTestFixedPoint, Partition2)
 }
 
 struct PartitionTestNotTyped : public cudf::test::BaseFixture {};
+
+template <typename MapType>
+struct PartitionMapRanksTest : public cudf::test::BaseFixture {};
+
+TYPED_TEST_SUITE(PartitionMapRanksTest, cudf::test::IntegralTypesNotBool);
+
+TEST_F(PartitionTestNotTyped, SingleFixedWidthManyPartitions)
+{
+  constexpr cudf::size_type rows = 4099;
+  auto const ids = cudf::detail::make_counting_transform_iterator(0, [](auto i) { return i; });
+  fixed_width_column_wrapper<int64_t> data(ids, ids + rows);
+  for (auto const partitions : {200, 256, 257}) {
+    for (auto const hot : {false, true}) {
+      SCOPED_TRACE(::testing::Message() << partitions << "/" << hot);
+      std::vector<int32_t> map(rows);
+      std::vector<int64_t> expected_values;
+      std::vector<cudf::size_type> offsets{0};
+      for (cudf::size_type p = 0; p < partitions; ++p) {
+        for (cudf::size_type i = 0; i < rows; ++i) {
+          map[i] = hot ? partitions - 1 : (i * 17 + 3) % partitions;
+          if (map[i] == p) { expected_values.push_back(i); }
+        }
+        offsets.push_back(expected_values.size());
+      }
+      fixed_width_column_wrapper<int32_t> map_column(map.begin(), map.end());
+      fixed_width_column_wrapper<int64_t> expected(expected_values.begin(), expected_values.end());
+      run_partition_test(
+        cudf::table_view{{data}}, map_column, partitions, cudf::table_view{{expected}}, offsets);
+    }
+  }
+}
+
+TYPED_TEST(PartitionMapRanksTest, TileBoundariesAndSkew)
+{
+  using size_type = cudf::size_type;
+  auto stream     = cuda::stream{cuda::device_ref{rmm::get_current_cuda_device().value()}};
+  for (auto const rows : {1023, 1024, 1025, 4099}) {
+    for (auto const partitions : {1, 2, 100, 200, 256, 257}) {
+      if (static_cast<std::uint64_t>(partitions - 1) >
+          static_cast<std::uint64_t>(std::numeric_limits<TypeParam>::max())) {
+        continue;
+      }
+      for (auto const distribution : {0, 1, 2}) {
+        SCOPED_TRACE(::testing::Message() << rows << "/" << partitions << "/" << distribution);
+        // Slice both the data and the map, with a different starting offset for each.
+        auto const ids =
+          cudf::detail::make_counting_transform_iterator(0, [](auto i) { return i; });
+        fixed_width_column_wrapper<size_type> row_ids(ids, ids + rows + 7);
+        auto const valid =
+          cudf::detail::make_counting_transform_iterator(0, [](auto i) { return i % 7 != 0; });
+        fixed_width_column_wrapper<size_type> nullable(ids, ids + rows + 7, valid);
+        std::vector<std::string> strings(rows + 7);
+        std::transform(ids, ids + rows + 7, strings.begin(), [](auto i) {
+          return i % 11 == 0 ? std::string{} : std::to_string(i) + "-\xE4\xB8\xAD";
+        });
+        strings_column_wrapper text(strings.begin(), strings.end(), valid);
+        auto input = cudf::slice(cudf::table_view{{row_ids, nullable, text}}, {7, rows + 7})[0];
+
+        std::vector<TypeParam> map(rows + 3, 0);
+        std::vector<size_type> expected_offsets(partitions + 1, 0);
+        for (size_type i = 0; i < rows; ++i) {
+          auto const partition = distribution == 1                  ? partitions - 1
+                                 : distribution == 2 && i % 10 != 0 ? 0
+                                                                    : (i * 17 + 3) % partitions;
+          map[i + 3]           = static_cast<TypeParam>(partition);
+          ++expected_offsets[partition + 1];
+        }
+        std::partial_sum(
+          expected_offsets.begin(), expected_offsets.end(), expected_offsets.begin());
+        fixed_width_column_wrapper<TypeParam> map_column(map.begin(), map.end());
+        auto map_view = cudf::slice(map_column, {3, rows + 3})[0];
+        cudf::get_default_stream().sync();
+
+        auto [output, offsets] = cudf::partition(input, map_view, partitions, stream, this->mr());
+        EXPECT_EQ(offsets, expected_offsets);
+        auto const [actual_ids, mask] =
+          cudf::test::to_host<size_type>(output->get_column(0), stream);
+        for (size_type p = 0; p < partitions; ++p) {
+          for (auto i = offsets[p]; i < offsets[p + 1]; ++i) {
+            ASSERT_GE(actual_ids[i], 7);
+            ASSERT_LT(actual_ids[i], rows + 7);
+            EXPECT_EQ(map[actual_ids[i] - 7 + 3], p);
+          }
+        }
+        // Unique row ids catch dropped/duplicated rows without requiring a stable partition.
+        auto sorted = cudf::sort(output->view(), {}, {}, stream, this->mr());
+        CUDF_TEST_EXPECT_TABLES_EQUAL(input, sorted->view(), stream);
+      }
+    }
+  }
+}
+
+TEST_F(PartitionTestNotTyped, PartitionMemoryResources)
+{
+  std::vector<std::string> values(1025);
+  std::vector<int32_t> partitions(1025, 0);
+  for (int32_t i = 0; i < 1025; ++i) {
+    values[i] = "value-" + std::to_string(i);
+  }
+  strings_column_wrapper strings(values.begin(), values.end());
+  fixed_width_column_wrapper<int32_t> map(partitions.begin(), partitions.end());
+  auto const input  = cudf::table_view{{strings, strings}};
+  auto stream       = cuda::stream{cuda::device_ref{rmm::get_current_cuda_device().value()}};
+  auto output_mr    = rmm::mr::statistics_resource_adaptor{mr()};
+  auto temporary_mr = rmm::mr::statistics_resource_adaptor{mr()};
+  cudf::get_default_stream().sync();
+  std::unique_ptr<cudf::table> output;
+  {
+    auto current = cudf::test::scoped_current_device_resource{temporary_mr};
+    auto result  = cudf::partition(input, map, 100, stream, output_mr);
+    output       = std::move(result.first);
+    stream.sync();
+  }
+  EXPECT_GT(output_mr.get_bytes_counter().value, 0);
+  EXPECT_GT(temporary_mr.get_bytes_counter().total, 0);
+  EXPECT_EQ(temporary_mr.get_bytes_counter().value, 0);
+  auto expected = cudf::sort(input);
+  auto actual   = cudf::sort(output->view());
+  CUDF_TEST_EXPECT_TABLES_EQUAL(expected->view(), actual->view());
+  output.reset();
+  stream.sync();
+  EXPECT_EQ(output_mr.get_bytes_counter().value, 0);
+}
+
+TEST_F(PartitionTestNotTyped, PartitionFixedWidthMemoryResources)
+{
+  constexpr cudf::size_type rows = 1025;
+  auto const ids = cudf::detail::make_counting_transform_iterator(0, [](auto i) { return i; });
+  fixed_width_column_wrapper<int32_t> data(ids, ids + rows);
+  auto const ones = cuda::make_constant_iterator<int32_t>(1);
+  fixed_width_column_wrapper<int32_t> map(ones, ones + rows);
+  auto stream = cuda::stream{cuda::device_ref{rmm::get_current_cuda_device().value()}};
+  cudf::get_default_stream().sync();
+
+  for (auto const& input : {cudf::table_view{{data}}, cudf::table_view{{data, data}}}) {
+    SCOPED_TRACE(input.num_columns());
+    cudf::test::memory_resource_test_harness resources{mr()};
+    std::unique_ptr<cudf::table> output;
+    {
+      auto current = cudf::test::scoped_current_device_resource{resources.temporary_mr()};
+      auto result  = cudf::partition(input, map, 2, stream, resources.output_mr());
+      output       = std::move(result.first);
+      EXPECT_EQ(result.second, (std::vector<cudf::size_type>{0, 0, rows}));
+      stream.sync();
+    }
+    resources.expect_resource_usage(output->alloc_size(),
+                                    {cudf::test::output_allocation_expectation::EXACT,
+                                     cudf::test::temporary_allocation_expectation::SOME},
+                                    stream);
+    auto sorted = cudf::sort(output->view(), {}, {}, stream, mr());
+    CUDF_TEST_EXPECT_TABLES_EQUAL(input, sorted->view(), stream);
+    output.reset();
+    resources.expect_no_live_allocations(stream);
+  }
+}
 
 TEST_F(PartitionTestNotTyped, ListOfStringsEmpty)
 {
