@@ -1103,7 +1103,7 @@ CUDF_HOST_DEVICE constexpr bool is_split_decode()
  * @param error_code Error code to set if an error is encountered
  */
 template <typename level_t, int decode_block_size_t, decode_kernel_mask kernel_mask_t>
-CUDF_KERNEL void __launch_bounds__(decode_block_size_t, 8)
+CUDF_KERNEL void __launch_bounds__(decode_block_size_t, has_dict<kernel_mask_t>() ? 9 : 8)
   decode_page_data_generic(PageInfo* pages,
                            device_span<ColumnChunkDesc const> chunks,
                            size_t min_row,
