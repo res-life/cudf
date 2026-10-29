@@ -665,7 +665,9 @@ struct rle_stream {
             uint8_t const* source      = payload + (bitpos >> 3);
             bitpos &= 7;
             uint32_t level_val;
-            if (source + sizeof(uint32_t) <= end) {
+            if (level_bits == 1) {
+              level_val = source < end ? source[0] : 0;
+            } else if (source + sizeof(uint32_t) <= end) {
               // Fast path: whole 32-bit field is in-bounds, so one unaligned
               // load replaces up to four dependent byte reads.
               level_val = cudf::io::unaligned_load<uint32_t>(source);
