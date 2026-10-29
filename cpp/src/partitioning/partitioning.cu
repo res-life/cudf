@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "partition_strings.cuh"
+
 #include <cudf/column/column_factories.hpp>
 #include <cudf/copying.hpp>
 #include <cudf/detail/gather.cuh>
@@ -970,6 +972,10 @@ std::pair<std::unique_ptr<table>, std::vector<size_type>> partition_with_block_r
                                       cuda::make_counting_iterator(size_type{0}),
                                       gather_map.data(),
                                       stream);
+  if (auto output = detail::gather_partition_strings(
+        input, device_span<size_type const>{gather_map.data(), gather_map.size()}, stream, mr)) {
+    return {std::move(output), std::move(partition_offsets)};
+  }
   auto output =
     cudf::detail::gather(input,
                          device_span<size_type const>{gather_map.data(), gather_map.size()},

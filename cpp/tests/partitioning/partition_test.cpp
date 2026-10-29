@@ -13,7 +13,9 @@
 #include <cudf/detail/iterator.cuh>
 #include <cudf/partitioning.hpp>
 #include <cudf/sorting.hpp>
+#include <cudf/strings/strings_column_view.hpp>
 #include <cudf/table/table.hpp>
+#include <cudf/unary.hpp>
 #include <cudf/utilities/default_stream.hpp>
 
 #include <rmm/cuda_device.hpp>
@@ -25,8 +27,11 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstdlib>
 #include <limits>
 #include <numeric>
+#include <optional>
+#include <stdexcept>
 #include <string>
 
 template <typename T>
@@ -549,4 +554,176 @@ TEST_F(PartitionTestNotTyped, NoIntegerOverflow)
   auto expected_table = cudf::table_view{{expected}};
 
   run_partition_test(table_to_partition, map, 2, expected_table, expected_offsets);
+}
+
+TEST_F(PartitionTestNotTyped, StringPermutationAndFallbacks)
+{
+  auto stream = cuda::stream{cuda::device_ref{rmm::get_current_cuda_device().value()}};
+  // Schemas 0/4 exercise the fused path with longer/short strings. Schemas 1/2/3 fall back for
+  // nullable strings, mixed types, and INT64 offsets, respectively.
+  // Schema 5 checks descriptor compaction with an empty column between nonempty columns.
+  for (auto const schema : {0, 1, 2, 3, 4, 5}) {
+    for (auto const rows : {1025, 4099}) {
+      auto const total = rows + 5;
+      std::vector<std::string> ids(total), values(total), empty(total);
+      std::vector<bool> valid(total);
+      std::vector<int32_t> numbers(total), partition_ids(total);
+      for (int32_t i = 0; i < total; ++i) {
+        ids[i]    = "row-" + std::to_string(i);
+        values[i] = i % 13 == 0 ? std::string{"a\0b", 3}
+                    : i % 7 == 0
+                      ? std::string{}
+                      : std::string(i % 67, 'a' + i % 26) + "\xE4\xB8\xAD\xF0\x9F\x8C\x8D";
+        if (schema == 4) {
+          values[i] = i % 13 == 0  ? std::string{"a\0b", 3}
+                      : i % 7 == 0 ? "\xE4\xB8\xAD"
+                                   : std::string(i % 17, 'a' + i % 26);
+        }
+        valid[i]   = i % 11 != 0;
+        numbers[i] = i;
+      }
+      strings_column_wrapper id_column(ids.begin(), ids.end());
+      strings_column_wrapper empty_column(empty.begin(), empty.end());
+      auto value_column =
+        schema == 1 ? strings_column_wrapper(values.begin(), values.end(), valid.begin()).release()
+                    : strings_column_wrapper(values.begin(), values.end()).release();
+      if (schema == 3) {
+        auto contents = value_column->release();
+        auto wide_offsets =
+          cudf::cast(contents.children[0]->view(), cudf::data_type{cudf::type_id::INT64});
+        value_column =
+          cudf::make_strings_column(total,
+                                    std::move(wide_offsets),
+                                    std::move(*contents.data),
+                                    0,
+                                    cudf::create_null_mask(0, cudf::mask_state::UNALLOCATED));
+      }
+      fixed_width_column_wrapper<int32_t> numeric(numbers.begin(), numbers.end());
+      std::vector<cudf::column_view> columns{id_column, *value_column, empty_column};
+      if (schema == 2) { columns.push_back(numeric); }
+      if (schema == 5) { columns = {id_column, empty_column, *value_column}; }
+      auto input = cudf::slice(cudf::table_view{columns}, {5, total})[0];
+      for (auto const partitions : {100, 200}) {
+        for (auto const skew : {false, true}) {
+          SCOPED_TRACE(::testing::Message()
+                       << schema << "/" << rows << "/" << partitions << "/" << skew);
+          std::vector<int32_t> expected_offsets(partitions + 1, 0);
+          for (int32_t i = 0; i < rows; ++i) {
+            partition_ids[i + 5] = skew && i % 10 != 0 ? partitions - 1 : (i * 37 + 7) % partitions;
+            ++expected_offsets[partition_ids[i + 5] + 1];
+          }
+          std::partial_sum(
+            expected_offsets.begin(), expected_offsets.end(), expected_offsets.begin());
+          fixed_width_column_wrapper<int32_t> map(partition_ids.begin(), partition_ids.end());
+          auto map_view = cudf::slice(map, {5, total})[0];
+          cudf::get_default_stream().sync();
+          auto [output, offsets] = cudf::partition(input, map_view, partitions, stream, mr());
+          EXPECT_EQ(offsets, expected_offsets);
+          auto const [actual_ids, mask] =
+            cudf::test::to_host<std::string>(output->get_column(0), stream);
+          std::vector<bool> seen(total, false);
+          for (int32_t p = 0; p < partitions; ++p) {
+            for (auto row = offsets[p]; row < offsets[p + 1]; ++row) {
+              auto const id = std::stoi(actual_ids[row].substr(4));
+              ASSERT_GE(id, 5);
+              ASSERT_LT(id, total);
+              EXPECT_FALSE(seen[id]);
+              seen[id] = true;
+              EXPECT_EQ(partition_ids[id], p);
+            }
+          }
+          auto expected = cudf::sort(input, {}, {}, stream, mr());
+          auto actual   = cudf::sort(output->view(), {}, {}, stream, mr());
+          CUDF_TEST_EXPECT_TABLES_EQUIVALENT(expected->view(), actual->view(), stream);
+        }
+      }
+    }
+  }
+}
+
+TEST_F(PartitionTestNotTyped, AllEmptyStringPermutation)
+{
+  std::vector<std::string> empty(1025);
+  strings_column_wrapper strings(empty.begin(), empty.end());
+  auto input = cudf::table_view{{strings, strings}};
+  std::vector<int32_t> partition_ids(1025, 199);
+  fixed_width_column_wrapper<int32_t> map(partition_ids.begin(), partition_ids.end());
+  auto [output, offsets] = cudf::partition(input, map, 200);
+  EXPECT_TRUE(std::all_of(offsets.begin(), offsets.end() - 1, [](auto x) { return x == 0; }));
+  EXPECT_EQ(offsets.back(), 1025);
+  CUDF_TEST_EXPECT_TABLES_EQUAL(input, output->view());
+}
+
+TEST_F(PartitionTestNotTyped, StringPermutationOutputOffsetThreshold)
+{
+  struct restore_environment {
+    char const* name;
+    std::optional<std::string> previous;
+
+    explicit restore_environment(char const* variable) : name(variable)
+    {
+      if (auto const value = std::getenv(name)) { previous = value; }
+    }
+
+    ~restore_environment()
+    {
+      if (previous) {
+        setenv(name, previous->c_str(), 1);
+      } else {
+        unsetenv(name);
+      }
+    }
+  };
+  restore_environment threshold_restore{"LIBCUDF_LARGE_STRINGS_THRESHOLD"};
+  restore_environment enabled_restore{"LIBCUDF_LARGE_STRINGS_ENABLED"};
+  ASSERT_EQ(setenv("LIBCUDF_LARGE_STRINGS_THRESHOLD", "2048", 1), 0);
+  ASSERT_EQ(setenv("LIBCUDF_LARGE_STRINGS_ENABLED", "1", 1), 0);
+
+  constexpr cudf::size_type rows = 1024;
+  std::vector<std::string> values(rows, "a");
+  strings_column_wrapper strings(values.begin(), values.end());
+  auto const input = cudf::table_view{{strings, strings}};
+  auto const ones  = cuda::make_constant_iterator<int32_t>(1);
+  fixed_width_column_wrapper<int32_t> map(ones, ones + rows);
+  ASSERT_EQ(cudf::strings_column_view(input.column(0)).offsets().type().id(), cudf::type_id::INT32);
+
+  // Change the threshold after construction to keep the input offsets INT32.
+  for (auto const threshold : {1025, 1024, 1023}) {
+    ASSERT_EQ(setenv("LIBCUDF_LARGE_STRINGS_THRESHOLD", std::to_string(threshold).c_str(), 1), 0);
+    for (auto const enabled : {true, false}) {
+      SCOPED_TRACE(::testing::Message() << threshold << "/" << enabled);
+      ASSERT_EQ(setenv("LIBCUDF_LARGE_STRINGS_ENABLED", enabled ? "1" : "0", 1), 0);
+      if (!enabled && rows >= threshold) {
+        EXPECT_THROW(cudf::partition(input, map, 2), std::overflow_error);
+      } else {
+        auto [output, offsets] = cudf::partition(input, map, 2);
+        EXPECT_EQ(offsets, (std::vector<cudf::size_type>{0, 0, rows}));
+        auto const expected_type = rows >= threshold ? cudf::type_id::INT64 : cudf::type_id::INT32;
+        for (auto const& column : output->view()) {
+          EXPECT_EQ(cudf::strings_column_view(column).offsets().type().id(), expected_type);
+        }
+        CUDF_TEST_EXPECT_TABLES_EQUIVALENT(input, output->view());
+      }
+    }
+  }
+}
+
+TEST_F(PartitionTestNotTyped, StringPermutationCopyGridStride)
+{
+  for (auto const width : {4, 16}) {
+    // One row beyond the first pass of each capped 4/16-lane copy grid.
+    auto const rows = cudf::size_type{65'535 * (256 / width) + 1};
+    SCOPED_TRACE(::testing::Message() << width << "/" << rows);
+    auto const value  = std::string(width, 'x');
+    auto const values = cuda::make_constant_iterator(value.c_str());
+    strings_column_wrapper strings(values, values + rows);
+    auto const ones = cuda::make_constant_iterator<int32_t>(1);
+    fixed_width_column_wrapper<int32_t> map(ones, ones + rows);
+    auto const input = cudf::table_view{{strings, strings}};
+    ASSERT_EQ(cudf::strings_column_view(input.column(0)).offsets().type().id(),
+              cudf::type_id::INT32);
+    auto [output, offsets] = cudf::partition(input, map, 2);
+    EXPECT_EQ(offsets, (std::vector<cudf::size_type>{0, 0, rows}));
+    CUDF_TEST_EXPECT_TABLES_EQUAL(input, output->view());
+  }
 }
