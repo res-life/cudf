@@ -41,6 +41,20 @@ namespace cudf::io::parquet::detail {
 
 namespace {
 
+struct initialize_flat_fixed_page_sizes {
+  PageInfo* pages;
+
+  __device__ void operator()(size_t page_idx) const
+  {
+    auto& page = pages[page_idx];
+    if (page.flags & PAGEINFO_FLAGS_DICTIONARY) { return; }
+    for (auto depth = 0; depth < page.num_output_nesting_levels; ++depth) {
+      page.nesting[depth].size       = page.num_input_values;
+      page.nesting[depth].batch_size = page.num_input_values;
+    }
+  }
+};
+
 /**
  * @brief Decide which nz map consumer, if any, can decode @p page.
  *
@@ -892,14 +906,29 @@ void reader_impl::preprocess_subpass_pages(read_mode mode, size_t chunk_read_lim
     // if:
     // - user has passed custom row bounds
     // - we will be doing a chunked read
-    compute_page_sizes(subpass.pages,
-                       pass.chunks,
-                       subpass_page_mask_span(),
-                       0,  // 0-max size_t. process all possible rows
-                       std::numeric_limits<size_t>::max(),
-                       true,  // compute num_rows
-                       _pass_itm_data->level_type_size,
-                       _stream);
+    constexpr auto fixed_width_flat_mask =
+      BitOr(decode_kernel_mask::FIXED_WIDTH_NO_DICT, decode_kernel_mask::FIXED_WIDTH_DICT);
+    auto const can_initialize_flat_fixed_sizes =
+      subpass.kernel_mask != 0 && (subpass.kernel_mask & ~fixed_width_flat_mask) == 0 &&
+      subpass_page_mask_span().is_empty() && !has_lists;
+    if (can_initialize_flat_fixed_sizes) {
+      // For flat fixed-width pages, compute_page_sizes only copies num_input_values to every output
+      // nesting level. Do that with one thread per page instead of launching one full block per
+      // page.
+      thrust::for_each(rmm::exec_policy_nosync(_stream, _mr.get_temporary_mr()),
+                       cuda::counting_iterator<size_t>{0},
+                       cuda::counting_iterator<size_t>{subpass.pages.size()},
+                       initialize_flat_fixed_page_sizes{subpass.pages.device_ptr()});
+    } else {
+      compute_page_sizes(subpass.pages,
+                         pass.chunks,
+                         subpass_page_mask_span(),
+                         0,  // 0-max size_t. process all possible rows
+                         std::numeric_limits<size_t>::max(),
+                         true,  // compute num_rows
+                         _pass_itm_data->level_type_size,
+                         _stream);
+    }
   }
 
   auto iter = cuda::counting_iterator<size_t>{0};
