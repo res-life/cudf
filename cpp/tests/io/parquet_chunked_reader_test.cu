@@ -1310,6 +1310,43 @@ TEST_F(ParquetChunkedReaderInputLimitConstrainedTest, SingleFixedWidthColumn)
   input_limit_test_read(test_filenames, tbl, 0, 1, expected_b, false);
 }
 
+TEST_F(ParquetChunkedReaderInputLimitConstrainedTest, DictionaryPartialRuns)
+{
+  constexpr cudf::size_type num_rows     = 4096;
+  constexpr cudf::size_type rows_to_skip = 137;
+  constexpr cudf::size_type rows_to_read = 3000;
+
+  auto const repeated_values = cuda::make_constant_iterator(15);
+  cudf::test::fixed_width_column_wrapper<int32_t> repeated_col(repeated_values,
+                                                               repeated_values + num_rows);
+
+  auto const literal_values =
+    std::views::iota(cudf::size_type{0}) |
+    std::views::transform([](auto i) { return static_cast<int32_t>((i * 37) % 257); });
+  auto const literal_iter = literal_values.begin();
+  cudf::test::fixed_width_column_wrapper<int32_t> literal_col(literal_iter,
+                                                              literal_iter + num_rows);
+  auto const input = cudf::table_view{{repeated_col, literal_col}};
+
+  auto const filepath = temp_env->get_temp_filepath("dictionary_partial_runs.parquet");
+  auto const write_opts =
+    cudf::io::parquet_writer_options::builder(cudf::io::sink_info{filepath}, input)
+      .compression(cudf::io::compression_type::SNAPPY)
+      .dictionary_policy(cudf::io::dictionary_policy::ALWAYS)
+      .max_page_size_rows(num_rows)
+      .build();
+  cudf::io::write_parquet(write_opts);
+
+  auto const read_opts = cudf::io::parquet_reader_options::builder(cudf::io::source_info{filepath})
+                           .skip_rows(rows_to_skip)
+                           .num_rows(rows_to_read)
+                           .build();
+  auto const result   = chunked_read(read_opts, 8 * 1024).first;
+  auto const expected = cudf::slice(input, {rows_to_skip, rows_to_skip + rows_to_read});
+
+  CUDF_TEST_EXPECT_TABLES_EQUAL(expected.front(), *result);
+}
+
 TEST_F(ParquetChunkedReaderInputLimitConstrainedTest, MixedColumns)
 {
   auto base_path      = temp_env->get_temp_filepath("mixed_columns");

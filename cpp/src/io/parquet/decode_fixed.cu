@@ -1152,23 +1152,18 @@ CUDF_KERNEL void __launch_bounds__(decode_block_size_t, 8)
   // shared buffer. all shared memory is suballocated out of here
   constexpr int rle_run_buffer_bytes =
     cuda::round_up(rle_run_buffer_size * sizeof(rle_run), size_t{16});
-  constexpr int shared_buf_size = cuda::std::max(
-    1, rle_run_buffer_bytes * (static_cast<int>(has_dict_t) + static_cast<int>(has_bools_t)));
+  constexpr int shared_buf_size =
+    cuda::std::max(1, rle_run_buffer_bytes * static_cast<int>(has_bools_t));
   __shared__ __align__(16) uint8_t shared_buf[shared_buf_size];
 
-  // setup all shared memory buffers
-  int shared_offset = 0;
-
-  auto dict_runs = reinterpret_cast<rle_run*>(shared_buf + shared_offset);
-  if constexpr (has_dict_t) { shared_offset += rle_run_buffer_bytes; }
-
-  auto bool_runs = reinterpret_cast<rle_run*>(shared_buf + shared_offset);
+  auto bool_runs = reinterpret_cast<rle_run*>(shared_buf);
 
   // get the level data
   auto* const def = reinterpret_cast<level_t*>(pp->lvl_decode_buf[level_type::DEFINITION]);
   auto* const rep = reinterpret_cast<level_t*>(pp->lvl_decode_buf[level_type::REPETITION]);
 
-  rle_stream<uint32_t, decode_block_size_t, rolling_buf_size> dict_stream{dict_runs};
+  rle_stream_chunked<uint32_t, decode_block_size_t, rolling_buf_size, rolling_buf_size, true>
+    dict_stream{};
   if constexpr (has_dict_t) {
     dict_stream.init(block,
                      s->stream.dict_bits,
