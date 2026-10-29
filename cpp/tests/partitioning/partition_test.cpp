@@ -557,7 +557,8 @@ TEST_F(PartitionTestNotTyped, StringPermutationAndFallbacks)
   auto stream = cuda::stream{cuda::device_ref{rmm::get_current_cuda_device().value()}};
   // Schemas 0/4 exercise the fused path with longer/short strings. Schemas 1/2/3 fall back for
   // nullable strings, mixed types, and INT64 offsets, respectively.
-  for (auto const schema : {0, 1, 2, 3, 4}) {
+  // Schema 5 checks descriptor compaction with an empty column between nonempty columns.
+  for (auto const schema : {0, 1, 2, 3, 4, 5}) {
     for (auto const rows : {1025, 4099}) {
       auto const total = rows + 5;
       std::vector<std::string> ids(total), values(total), empty(total);
@@ -596,6 +597,7 @@ TEST_F(PartitionTestNotTyped, StringPermutationAndFallbacks)
       fixed_width_column_wrapper<int32_t> numeric(numbers.begin(), numbers.end());
       std::vector<cudf::column_view> columns{id_column, *value_column, empty_column};
       if (schema == 2) { columns.push_back(numeric); }
+      if (schema == 5) { columns = {id_column, empty_column, *value_column}; }
       auto input = cudf::slice(cudf::table_view{columns}, {5, total})[0];
       for (auto const partitions : {100, 200}) {
         for (auto const skew : {false, true}) {
