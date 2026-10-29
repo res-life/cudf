@@ -910,7 +910,8 @@ std::pair<std::unique_ptr<table>, std::vector<size_type>> partition_with_block_r
       gather_map.data(),
       offsets.data());
     CUDF_CUDA_TRY(cudaPeekAtLastError());
-    partition_offsets = cudf::detail::make_std_vector(offsets, stream);
+    auto const pinned_offsets = cudf::detail::make_pinned_vector(offsets, stream);
+    partition_offsets.assign(pinned_offsets.begin(), pinned_offsets.end());
   }
   auto const gather_map_view =
     column_view{data_type{type_id::INT32}, num_rows, gather_map.data(), nullptr, 0};
