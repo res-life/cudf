@@ -29,6 +29,8 @@
 #include <cuda/buffer>
 #include <cuda/devices>
 #include <cuda/iterator>
+#include <cuda/std/bit>
+#include <cuda/std/cstddef>
 #include <cuda/stream>
 #include <thrust/scan.h>
 #include <thrust/transform.h>
@@ -791,7 +793,7 @@ CUDF_KERNEL void partition_map_local_ranks(MapType const* partition_map,
   size_type partitions[MAP_PARTITION_ITEMS_PER_THREAD];
 #pragma unroll
   for (size_type item = 0; item < MAP_PARTITION_ITEMS_PER_THREAD; ++item) {
-    auto const row = static_cast<std::size_t>(blockIdx.x) * MAP_PARTITION_TILE_SIZE +
+    auto const row = static_cast<cuda::std::size_t>(blockIdx.x) * MAP_PARTITION_TILE_SIZE +
                      warp * warp_size * MAP_PARTITION_ITEMS_PER_THREAD + item * warp_size + lane;
     auto const valid  = row < num_rows;
     auto const active = __ballot_sync(0xffffffffu, valid);
@@ -800,10 +802,12 @@ CUDF_KERNEL void partition_map_local_ranks(MapType const* partition_map,
       partitions[item]     = partition;
       auto const peers     = __match_any_sync(active, partition);
       auto const base      = histogram[warp][partition];
-      ranks[item]          = base + __popc(peers & ((1u << lane) - 1u));
+      ranks[item]          = base + cuda::std::popcount(peers & ((1u << lane) - 1u));
       // All readers of a bin finish before its elected writer updates it.
       __syncwarp(active);
-      if (lane == __ffs(peers) - 1) { histogram[warp][partition] = base + __popc(peers); }
+      if (lane == __ffs(peers) - 1) {
+        histogram[warp][partition] = base + cuda::std::popcount(peers);
+      }
     }
     __syncwarp();
   }
@@ -818,13 +822,13 @@ CUDF_KERNEL void partition_map_local_ranks(MapType const* partition_map,
       histogram[w][partition] = total;
       total += count;
     }
-    block_counts[static_cast<std::size_t>(partition) * gridDim.x + blockIdx.x] = total;
+    block_counts[static_cast<cuda::std::size_t>(partition) * gridDim.x + blockIdx.x] = total;
   }
   __syncthreads();
 
 #pragma unroll
   for (size_type item = 0; item < MAP_PARTITION_ITEMS_PER_THREAD; ++item) {
-    auto const row = static_cast<std::size_t>(blockIdx.x) * MAP_PARTITION_TILE_SIZE +
+    auto const row = static_cast<cuda::std::size_t>(blockIdx.x) * MAP_PARTITION_TILE_SIZE +
                      warp * warp_size * MAP_PARTITION_ITEMS_PER_THREAD + item * warp_size + lane;
     if (row < num_rows) {
       // A rank is at most 1023, so two bytes per row are sufficient.
@@ -845,7 +849,7 @@ CUDF_KERNEL void partition_map_gather_indices(MapType const* partition_map,
 {
   __shared__ size_type partition_bases[MAP_PARTITION_MAX_BINS];
   if (threadIdx.x < num_partitions) {
-    auto const partition_base    = static_cast<std::size_t>(threadIdx.x) * num_blocks;
+    auto const partition_base    = static_cast<cuda::std::size_t>(threadIdx.x) * num_blocks;
     partition_bases[threadIdx.x] = block_offsets[partition_base + blockIdx.x];
     if (blockIdx.x == 0) { partition_offsets[threadIdx.x] = block_offsets[partition_base]; }
   }
@@ -855,7 +859,7 @@ CUDF_KERNEL void partition_map_gather_indices(MapType const* partition_map,
   // Reuse each block's partition bases across all rows in its tile.
 #pragma unroll
   for (size_type item = 0; item < MAP_PARTITION_ITEMS_PER_THREAD; ++item) {
-    auto const row = static_cast<std::size_t>(blockIdx.x) * MAP_PARTITION_TILE_SIZE +
+    auto const row = static_cast<cuda::std::size_t>(blockIdx.x) * MAP_PARTITION_TILE_SIZE +
                      item * MAP_PARTITION_BLOCK_SIZE + threadIdx.x;
     if (row < num_rows) {
       auto const partition    = static_cast<size_type>(partition_map[row]);
