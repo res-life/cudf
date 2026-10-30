@@ -258,6 +258,47 @@ TEST_F(ParquetChunkedReaderTest, TestChunkedReadSimpleData)
   }
 }
 
+TEST_F(ParquetChunkedReaderTest, CorruptFixedWidthOffsetIndexFallsBackToPageHeaders)
+{
+  auto constexpr num_rows = 40'000;
+  auto const value_iter   = cuda::counting_iterator<int32_t>{0};
+  auto const input        = int32s_col(value_iter, value_iter + num_rows);
+  auto const expected     = cudf::table_view{{input}};
+  auto const filepath     = temp_env->get_temp_filepath("corrupt_fixed_offset_index.parquet");
+
+  auto const write_options =
+    cudf::io::parquet_writer_options::builder(cudf::io::sink_info{filepath}, expected)
+      .stats_level(cudf::io::statistics_freq::STATISTICS_COLUMN)
+      .max_page_size_rows(1'000)
+      .build();
+  cudf::io::write_parquet(write_options);
+
+  auto sources        = cudf::io::make_datasources(cudf::io::source_info{filepath});
+  auto const metadata = cudf::io::read_parquet_footers(sources).front();
+  auto const& chunk   = metadata.row_groups.front().columns.front();
+  ASSERT_GT(chunk.offset_index_offset, 0);
+  ASSERT_GT(chunk.offset_index_length, 0);
+  EXPECT_FALSE(chunk.offset_index.has_value());
+
+  {
+    auto const [result, num_chunks] = chunked_read(filepath, 240'000);
+    EXPECT_GT(num_chunks, 0);
+    CUDF_TEST_EXPECT_TABLES_EQUAL(expected, result->view());
+  }
+
+  auto file = std::fstream{filepath, std::ios::in | std::ios::out | std::ios::binary};
+  ASSERT_TRUE(file.is_open());
+  file.seekp(chunk.offset_index_offset);
+  auto const corrupt_index = std::vector<char>(chunk.offset_index_length, '\xff');
+  file.write(corrupt_index.data(), corrupt_index.size());
+  ASSERT_TRUE(file.good());
+  file.close();
+
+  auto const [result, num_chunks] = chunked_read(filepath, 240'000);
+  EXPECT_GT(num_chunks, 0);
+  CUDF_TEST_EXPECT_TABLES_EQUAL(expected, result->view());
+}
+
 TEST_F(ParquetChunkedReaderTest, TestChunkedReadBoundaryCases)
 {
   // Tests some specific boundary conditions in the split calculations.

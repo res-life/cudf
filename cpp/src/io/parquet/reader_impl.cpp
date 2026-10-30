@@ -32,6 +32,7 @@
 
 #include <algorithm>
 #include <bitset>
+#include <filesystem>
 #include <limits>
 #include <numeric>
 #include <optional>
@@ -39,6 +40,24 @@
 #include <utility>
 
 namespace cudf::io::parquet::detail {
+
+namespace {
+
+page_index_read_mode page_index_mode_for_reader(source_info const& source, std::size_t num_sources)
+{
+  if (source.type() != io_type::FILEPATH or source.filepaths().size() != num_sources) {
+    return page_index_read_mode::STRING_COLUMNS;
+  }
+
+  auto const all_local_files = std::ranges::all_of(source.filepaths(), [](auto const& path) {
+    std::error_code error;
+    return std::filesystem::is_regular_file(path, error);
+  });
+  return all_local_files ? page_index_read_mode::STRING_OR_FIXED_LOCAL
+                         : page_index_read_mode::STRING_COLUMNS;
+}
+
+}  // namespace
 
 void reader_impl::decode_page_data(read_mode mode, size_t skip_rows, size_t num_rows)
 {
@@ -631,14 +650,16 @@ reader_impl::reader_impl(std::size_t chunk_read_limit,
   CUDF_EXPECTS(file_metadatas.empty() or file_metadatas.size() == _sources.size(),
                "Encountered a mismatch in the number of provided data sources and metadatas");
 
-  _metadata = file_metadatas.empty() ? std::make_shared<aggregate_reader_metadata>(
-                                         _sources,
-                                         options.is_enabled_use_arrow_schema(),
-                                         has_cols_from_mismatched_sources(options))
-                                     : std::make_shared<aggregate_reader_metadata>(
-                                         std::forward<std::vector<FileMetaData>>(file_metadatas),
-                                         options.is_enabled_use_arrow_schema(),
-                                         has_cols_from_mismatched_sources(options));
+  _metadata = file_metadatas.empty()
+                ? std::make_shared<aggregate_reader_metadata>(
+                    _sources,
+                    options.is_enabled_use_arrow_schema(),
+                    has_cols_from_mismatched_sources(options),
+                    page_index_mode_for_reader(options.get_source(), _sources.size()))
+                : std::make_shared<aggregate_reader_metadata>(
+                    std::forward<std::vector<FileMetaData>>(file_metadatas),
+                    options.is_enabled_use_arrow_schema(),
+                    has_cols_from_mismatched_sources(options));
 
   // Number of input sources
   _num_sources = _sources.size();
@@ -1312,11 +1333,11 @@ parquet_metadata read_parquet_metadata(std::span<std::unique_ptr<datasource> con
   constexpr auto has_column_projection = false;
 
   // Do not read page indexes as it's not used to construct `parquet_metadata`.
-  constexpr auto read_page_indexes = false;
+  constexpr auto page_index_mode = page_index_read_mode::NEVER;
 
   // Open and parse the source dataset metadata
   auto metadata =
-    aggregate_reader_metadata(sources, use_arrow_schema, has_column_projection, read_page_indexes);
+    aggregate_reader_metadata(sources, use_arrow_schema, has_column_projection, page_index_mode);
 
   return parquet_metadata{parquet_schema{walk_schema(&metadata, 0)},
                           metadata.get_num_rows(),
@@ -1334,11 +1355,11 @@ std::vector<parquet::FileMetaData> read_parquet_footers(
   if (sources.empty()) { return {}; }
 
   // Read page indexes if available here since we will want to reuse the raw metadata for later use.
-  constexpr auto read_page_indexes = true;
+  constexpr auto page_index_mode = page_index_read_mode::STRING_COLUMNS;
 
   // Parse sources into FileMetaData objects
   return parallel_construct_metadatas(sources, [](auto const& source) {
-    return FileMetaData{metadata{source.get(), read_page_indexes}};
+    return FileMetaData{metadata{source.get(), page_index_mode}};
   });
 }
 

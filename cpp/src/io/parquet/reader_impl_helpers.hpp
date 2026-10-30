@@ -36,6 +36,15 @@
 namespace cudf::io::parquet::detail {
 
 /**
+ * @brief Controls which Parquet page indexes are loaded during metadata construction.
+ */
+enum class page_index_read_mode : uint8_t {
+  NEVER,
+  STRING_COLUMNS,
+  STRING_OR_FIXED_LOCAL,
+};
+
+/**
  * @brief Construct metadatas from inputs using the host worker pool for multiple inputs
  *
  * All submitted tasks are waited on before any exception is propagated.
@@ -197,7 +206,8 @@ struct row_group_size_info {
  */
 struct metadata : public FileMetaData {
   metadata() = default;
-  explicit metadata(datasource* source, bool read_page_indexes = true);
+  explicit metadata(datasource* source,
+                    page_index_read_mode mode = page_index_read_mode::STRING_COLUMNS);
   explicit metadata(FileMetaData&& other);
   metadata(metadata const& other)            = delete;
   metadata(metadata&& other)                 = default;
@@ -211,12 +221,15 @@ struct metadata : public FileMetaData {
    *
    * @throws std::overflow_error if the byte ranges overflow int64_t
    */
-  [[nodiscard]] text::byte_range_info page_index_byte_range() const;
+  [[nodiscard]] text::byte_range_info page_index_byte_range(
+    bool include_column_indexes = true) const;
 
   /**
    * @brief Parses column and offset indexes from the page index bytes starting at `min_offset`
    */
-  void setup_page_index(std::span<uint8_t const> page_index_bytes, int64_t min_offset);
+  void setup_page_index(std::span<uint8_t const> page_index_bytes,
+                        int64_t min_offset,
+                        bool include_column_indexes = true);
 
   /**
    * @brief Returns whether the page index has been set up
@@ -301,7 +314,8 @@ class aggregate_reader_metadata {
    * @brief Create a metadata object from each element in the source vector
    */
   static std::vector<metadata> metadatas_from_sources(
-    std::span<std::unique_ptr<datasource> const> sources, bool read_page_indexes = true);
+    std::span<std::unique_ptr<datasource> const> sources,
+    page_index_read_mode mode = page_index_read_mode::STRING_COLUMNS);
 
   /**
    * @brief Collect the keyvalue maps from each per-file metadata object into a vector of maps.
@@ -530,7 +544,7 @@ class aggregate_reader_metadata {
   aggregate_reader_metadata(std::span<std::unique_ptr<datasource> const> sources,
                             bool use_arrow_schema,
                             bool has_cols_from_mismatched_srcs,
-                            bool read_page_indexes = true);
+                            page_index_read_mode mode = page_index_read_mode::STRING_COLUMNS);
 
   aggregate_reader_metadata(std::vector<FileMetaData>&& parquet_metadatas,
                             bool use_arrow_schema,
