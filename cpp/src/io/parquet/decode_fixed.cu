@@ -535,6 +535,7 @@ __device__ int update_validity_and_row_indices_nested(
  *
  * @tparam decode_block_size Size of the thread block
  * @tparam items_per_thread Number of consecutive rows processed by each thread
+ * @tparam fuse_plain_int32_t Whether this kernel can fuse PLAIN INT32 value decoding
  * @tparam level_t Definition level type
  * @tparam state_buf State buffer type
  *
@@ -542,13 +543,23 @@ __device__ int update_validity_and_row_indices_nested(
  * @param s Pointer to  page state
  * @param sb Pointer to  state buffer
  * @param def Pointer to the definition levels
+ * @param fuse_plain_int32 Whether to decode PLAIN INT32 values while computing row indices
  * @param t Thread index
  *
  * @return Maximum depth valid count after processing
  */
-template <int decode_block_size, int items_per_thread, typename level_t, typename state_buf>
+template <int decode_block_size,
+          int items_per_thread,
+          bool fuse_plain_int32_t,
+          typename level_t,
+          typename state_buf>
 __device__ int update_validity_and_row_indices_flat(
-  int32_t target_value_count, auto* s, state_buf* sb, level_t const* const def, int t)
+  int32_t target_value_count,
+  auto* s,
+  state_buf* sb,
+  level_t const* const def,
+  bool fuse_plain_int32,
+  int t)
 {
   static_assert(items_per_thread == 2 || items_per_thread == 4);
   constexpr int max_batch_size = decode_block_size * items_per_thread;
@@ -662,23 +673,25 @@ __device__ int update_validity_and_row_indices_flat(
 
     if (t == 0) { ni.null_count += batch_size - block_valid_count; }
 
-    if (is_valid0) {
-      sb->nz_idx[rolling_index<state_buf::nz_buf_size>(valid_count + thread_valid_count)] =
-        value_count + pos0;
-    }
-    if (is_valid1) {
-      auto const src_pos = valid_count + thread_valid_count + is_valid0;
-      sb->nz_idx[rolling_index<state_buf::nz_buf_size>(src_pos)] = value_count + pos1;
-    }
+    auto write_value_or_row_index = [&](int is_valid, int pos, int preceding_valids) {
+      if (not is_valid) { return; }
+      auto const src_pos = valid_count + thread_valid_count + preceding_valids;
+      if constexpr (fuse_plain_int32_t) {
+        if (fuse_plain_int32) {
+          auto const dst_pos = value_count + pos - first_row;
+          auto* const dst     = reinterpret_cast<uint32_t*>(ni.data_out) + dst_pos;
+          read_fixed_width_value_fast<false>(s, sb, src_pos, dst);
+          return;
+        }
+      }
+      sb->nz_idx[rolling_index<state_buf::nz_buf_size>(src_pos)] = value_count + pos;
+    };
+
+    write_value_or_row_index(is_valid0, pos0, 0);
+    write_value_or_row_index(is_valid1, pos1, is_valid0);
     if constexpr (items_per_thread == 4) {
-      if (is_valid2) {
-        auto const src_pos = valid_count + thread_valid_count + is_valid0 + is_valid1;
-        sb->nz_idx[rolling_index<state_buf::nz_buf_size>(src_pos)] = value_count + pos2;
-      }
-      if (is_valid3) {
-        auto const src_pos = valid_count + thread_valid_count + is_valid0 + is_valid1 + is_valid2;
-        sb->nz_idx[rolling_index<state_buf::nz_buf_size>(src_pos)] = value_count + pos3;
-      }
+      write_value_or_row_index(is_valid2, pos2, is_valid0 + is_valid1);
+      write_value_or_row_index(is_valid3, pos3, is_valid0 + is_valid1 + is_valid2);
     }
 
     // update stuff
@@ -1225,6 +1238,11 @@ CUDF_KERNEL void __launch_bounds__(
   }
 
   bool const process_nulls = should_process_nulls(s);
+  constexpr bool can_fuse_plain_int32_t =
+    kernel_mask_t == decode_kernel_mask::FIXED_WIDTH_NO_DICT;
+  bool const fuse_plain_int32 = can_fuse_plain_int32_t && process_nulls &&
+                                s->setup.col.physical_type == Type::INT32 &&
+                                s->output_cvt.dtype_len == sizeof(uint32_t);
 
   // shared buffer. all shared memory is suballocated out of here
   constexpr int rle_run_buffer_bytes =
@@ -1319,8 +1337,9 @@ CUDF_KERNEL void __launch_bounds__(
           update_validity_and_row_indices_flat<
             decode_block_size_t,
             has_dict_t ? dictionary_decode_items_per_thread : 2,
+            can_fuse_plain_int32_t,
             level_t>(
-            processed_count, s, sb, def, t);
+            processed_count, s, sb, def, fuse_plain_int32, t);
       }
     }
     // if we wanted to split off the skip_rows/num_rows case into a separate kernel, we could skip
@@ -1378,13 +1397,15 @@ CUDF_KERNEL void __launch_bounds__(
       }
     };
 
-    if constexpr (has_lists_t) {
-      decode_values.template operator()<copy_mode::INDIRECT>();
-    } else {
-      if (process_nulls) {
+    if (not fuse_plain_int32) {
+      if constexpr (has_lists_t) {
         decode_values.template operator()<copy_mode::INDIRECT>();
       } else {
-        decode_values.template operator()<copy_mode::DIRECT>();
+        if (process_nulls) {
+          decode_values.template operator()<copy_mode::INDIRECT>();
+        } else {
+          decode_values.template operator()<copy_mode::DIRECT>();
+        }
       }
     }
 
