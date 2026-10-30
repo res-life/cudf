@@ -685,7 +685,7 @@ void metadata::setup_page_index(std::span<uint8_t const> page_index_bytes,
   };
 
   // Use parallel processing only if we have enough columns to justify the overhead
-  constexpr std::size_t parallel_threshold = 64;
+  constexpr std::size_t parallel_threshold = 256;
   auto const total_column_chunks           = all_column_chunks.size();
   if (total_column_chunks >= parallel_threshold) {
     // Dynamically calculate number of tasks based the number or row groups and columns
