@@ -74,6 +74,8 @@ TEST_F(HashTest, SparkMurmurMultiValue)
 
   auto const output = cudf::hashing::spark_murmurhash3_x86_32(
     input, cudf::DEFAULT_HASH_SEED, cudf::test::get_default_stream());
+  auto const partitions =
+    cudf::hashing::spark_murmurhash3_x86_32_pmod(input, 200, 42, cudf::test::get_default_stream());
 }
 
 CUDF_TEST_PROGRAM_MAIN()
