@@ -20,6 +20,14 @@ namespace cudf::io::parquet::detail {
 
 namespace {
 
+// The dictionary decoder's 9-block bound is validated for Ada's register file and shared-memory
+// capacity. Preserve the established 8-block code generation on other architectures.
+#if __CUDA_ARCH__ == 890
+constexpr int dictionary_decode_min_blocks_per_sm = 9;
+#else
+constexpr int dictionary_decode_min_blocks_per_sm = 8;
+#endif
+
 // Unlike cub's algorithm, this provides warp-wide and block-wide results simultaneously.
 // Also, this provides the ability to compute warp_bits & lane_mask manually, which we need for
 // lists.
@@ -1156,7 +1164,8 @@ CUDF_HOST_DEVICE constexpr bool is_split_decode()
  * @param error_code Error code to set if an error is encountered
  */
 template <typename level_t, int decode_block_size_t, decode_kernel_mask kernel_mask_t>
-CUDF_KERNEL void __launch_bounds__(decode_block_size_t, has_dict<kernel_mask_t>() ? 9 : 8)
+CUDF_KERNEL void __launch_bounds__(
+  decode_block_size_t, has_dict<kernel_mask_t>() ? dictionary_decode_min_blocks_per_sm : 8)
   decode_page_data_generic(PageInfo* pages,
                            device_span<ColumnChunkDesc const> chunks,
                            size_t min_row,
