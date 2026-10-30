@@ -20,12 +20,14 @@ namespace cudf::io::parquet::detail {
 
 namespace {
 
-// The dictionary decoder's 9-block bound is validated for Ada's register file and shared-memory
-// capacity. Preserve the established 8-block code generation on other architectures.
+// The dictionary decoder's 9-block bound and four-item batches are validated for Ada's register
+// file and shared-memory capacity. Preserve the established settings on other architectures.
 #if __CUDA_ARCH__ == 890
 constexpr int dictionary_decode_min_blocks_per_sm = 9;
+constexpr int dictionary_decode_items_per_thread  = 4;
 #else
 constexpr int dictionary_decode_min_blocks_per_sm = 8;
+constexpr int dictionary_decode_items_per_thread  = 2;
 #endif
 
 // Unlike cub's algorithm, this provides warp-wide and block-wide results simultaneously.
@@ -1184,7 +1186,8 @@ CUDF_KERNEL void __launch_bounds__(
     (static_cast<uint32_t>(kernel_mask_t) & STRINGS_MASK_NON_DELTA) != 0;
   constexpr bool is_dict_int32_t = is_dict_int32_output<kernel_mask_t>();
 
-  constexpr int rolling_buf_size    = decode_block_size_t * (has_dict_t ? 4 : 2);
+  constexpr int rolling_buf_size =
+    decode_block_size_t * (has_dict_t ? dictionary_decode_items_per_thread : 2);
   constexpr int dict_run_table_size = decode_block_size_t * 2;
   constexpr int rle_run_buffer_size = rle_stream_required_run_buffer_size<decode_block_size_t>();
 
@@ -1313,7 +1316,10 @@ CUDF_KERNEL void __launch_bounds__(
           processed_count, s, sb, def, t);
       } else {
         next_valid_count =
-          update_validity_and_row_indices_flat<decode_block_size_t, has_dict_t ? 4 : 2, level_t>(
+          update_validity_and_row_indices_flat<
+            decode_block_size_t,
+            has_dict_t ? dictionary_decode_items_per_thread : 2,
+            level_t>(
             processed_count, s, sb, def, t);
       }
     }
