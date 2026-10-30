@@ -170,11 +170,10 @@ void reader_impl::setup_next_pass(read_mode mode)
     // store off how much memory we've used so far. This includes the compressed page data and the
     // decompressed dictionary data. we will subtract this from the available total memory for the
     // subpasses
-    auto const compressed_data_size =
-      std::accumulate(pass.chunks.begin(),
-                      pass.chunks.end(),
-                      size_t{0},
-                      [](size_t acc, auto const& chunk) { return acc + chunk.compressed_size; });
+    auto const compressed_data_size = std::accumulate(
+      pass.chunks.begin(), pass.chunks.end(), size_t{0}, [](size_t acc, auto const& chunk) {
+        return acc + chunk.compressed_size;
+      });
     pass.base_mem_size = decomp_dict_data_size + compressed_data_size;
 
     // if we are doing subpass reading, generate more accurate num_row estimates for list columns.

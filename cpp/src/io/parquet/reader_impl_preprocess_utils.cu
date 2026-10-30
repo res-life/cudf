@@ -606,16 +606,12 @@ void decode_page_headers_impl(pass_intermediate_data& pass,
   // The level widths are schema metadata initialized on the host and never changed by header
   // decoding. Reuse that mirror instead of launching a device reduction and synchronizing a
   // scalar back to the host.
-  auto const max_level_bits =
-    std::accumulate(pass.chunks.begin(),
-                    pass.chunks.end(),
-                    int{0},
-                    [](int max_bits, auto const& chunk) {
-                      return std::max<int>(
-                        max_bits,
-                        std::max<int>(chunk.level_bits[level_type::REPETITION],
-                                      chunk.level_bits[level_type::DEFINITION]));
-                    });
+  auto const max_level_bits = std::accumulate(
+    pass.chunks.begin(), pass.chunks.end(), int{0}, [](int max_bits, auto const& chunk) {
+      return std::max<int>(max_bits,
+                           std::max<int>(chunk.level_bits[level_type::REPETITION],
+                                         chunk.level_bits[level_type::DEFINITION]));
+    });
   pass.level_type_size = std::max<int32_t>(1, cudf::util::div_rounding_up_safe(max_level_bits, 8));
 
   // sort the pages in chunk/schema order.
@@ -631,8 +627,7 @@ void decode_page_headers_impl(pass_intermediate_data& pass,
     pass.chunks.begin(), pass.chunks.end(), size_t{0}, [](size_t count, auto const& chunk) {
       return std::max(count, static_cast<size_t>(chunk.src_col_index + 1));
     });
-  auto page_offsets =
-    cudf::detail::make_pinned_vector_async<size_type>(num_columns + 1, stream);
+  auto page_offsets = cudf::detail::make_pinned_vector_async<size_type>(num_columns + 1, stream);
   std::fill(page_offsets.begin(), page_offsets.end(), size_type{0});
   for (auto const& chunk : pass.chunks) {
     page_offsets[chunk.src_col_index + 1] += chunk.num_data_pages + chunk.num_dict_pages;
