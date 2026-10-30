@@ -1175,9 +1175,7 @@ CUDF_KERNEL void __launch_bounds__(decode_block_size_t, has_dict<kernel_mask_t>(
     (static_cast<uint32_t>(kernel_mask_t) & STRINGS_MASK_NON_DELTA) != 0;
   constexpr bool is_dict_int32_t = is_dict_int32_output<kernel_mask_t>();
 
-  constexpr int items_per_thread =
-    has_dict_t || kernel_mask_t == decode_kernel_mask::FIXED_WIDTH_NO_DICT ? 4 : 2;
-  constexpr int rolling_buf_size    = decode_block_size_t * items_per_thread;
+  constexpr int rolling_buf_size    = decode_block_size_t * (has_dict_t ? 4 : 2);
   constexpr int dict_run_table_size = decode_block_size_t * 2;
   constexpr int rle_run_buffer_size = rle_stream_required_run_buffer_size<decode_block_size_t>();
 
@@ -1306,7 +1304,7 @@ CUDF_KERNEL void __launch_bounds__(decode_block_size_t, has_dict<kernel_mask_t>(
           processed_count, s, sb, def, t);
       } else {
         next_valid_count =
-          update_validity_and_row_indices_flat<decode_block_size_t, items_per_thread, level_t>(
+          update_validity_and_row_indices_flat<decode_block_size_t, has_dict_t ? 4 : 2, level_t>(
             processed_count, s, sb, def, t);
       }
     }
