@@ -644,15 +644,19 @@ struct rle_stream {
                                                   out_pos) -
                            chunk_out_off_v.begin()) -
           1;
+        int run_start_out = chunk_out_off_v[run_idx];
+        int run_end_out   = chunk_out_off_v[run_idx + 1];
+        uint32_t run_desc = chunk_meta_v[run_idx];
         while (out_pos < hi) {
           // Linear walk forward: no iterations if we're still in the same
           // run (long run case), 1+ iterations only when out_pos crosses one
           // or more short-run boundaries.
-          while (run_idx < chunk_runs && chunk_out_off_v[run_idx + 1] <= out_pos) {
+          while (run_idx < chunk_runs && run_end_out <= out_pos) {
             ++run_idx;
+            run_start_out = run_end_out;
+            run_end_out   = chunk_out_off_v[run_idx + 1];
+            run_desc      = chunk_meta_v[run_idx];
           }
-          int const run_start_out      = chunk_out_off_v[run_idx];
-          uint32_t const run_desc      = chunk_meta_v[run_idx];
           int const run_payload_offset = (run_idx == 0) ? run0_payload_offset : 0;
 
           if (run_desc & run_desc_literal_flag) {
