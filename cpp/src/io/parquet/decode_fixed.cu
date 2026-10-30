@@ -149,7 +149,11 @@ __device__ void decode_dict_indices_as_int32(
   }
 }
 
-template <int block_size, bool has_lists_t, copy_mode copy_mode_t, typename state_buf>
+template <int block_size,
+          bool has_lists_t,
+          bool has_dict_t,
+          copy_mode copy_mode_t,
+          typename state_buf>
 __device__ void decode_fixed_width_values(auto* s, state_buf* const sb, int start, int end, int t)
 {
   constexpr int num_warps      = block_size / cudf::detail::warp_size;
@@ -192,15 +196,15 @@ __device__ void decode_fixed_width_values(auto* s, state_buf* const sb, int star
     void* const dst = data_out + (static_cast<size_t>(dst_pos) * dtype_len);
 
     if (dtype == Type::INT32 && dtype_len == sizeof(uint32_t)) {
-      read_fixed_width_value_fast(s, sb, src_pos, static_cast<uint32_t*>(dst));
+      read_fixed_width_value_fast<has_dict_t>(s, sb, src_pos, static_cast<uint32_t*>(dst));
     } else if (s->setup.col.logical_type.has_value() &&
                s->setup.col.logical_type->type == LogicalType::DECIMAL) {
       switch (dtype) {
         case Type::INT32:
-          read_fixed_width_value_fast(s, sb, src_pos, static_cast<uint32_t*>(dst));
+          read_fixed_width_value_fast<has_dict_t>(s, sb, src_pos, static_cast<uint32_t*>(dst));
           break;
         case Type::INT64:
-          read_fixed_width_value_fast(s, sb, src_pos, static_cast<uint2*>(dst));
+          read_fixed_width_value_fast<has_dict_t>(s, sb, src_pos, static_cast<uint2*>(dst));
           break;
         default:
           if (s->output_cvt.dtype_len_in <= sizeof(int32_t)) {
@@ -222,16 +226,16 @@ __device__ void decode_fixed_width_values(auto* s, state_buf* const sb, int star
         // TIME_MILLIS is the only duration type stored as int32:
         // https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#deprecated-time-convertedtype
         auto const dst_ptr = static_cast<uint32_t*>(dst);
-        read_fixed_width_value_fast(s, sb, src_pos, dst_ptr);
+        read_fixed_width_value_fast<has_dict_t>(s, sb, src_pos, dst_ptr);
         // zero out most significant bytes
         cuda::std::memset(dst_ptr + 1, 0, sizeof(int32_t));
       } else if (s->output_cvt.ts_scale) {
         read_int64_timestamp(s, sb, src_pos, static_cast<int64_t*>(dst));
       } else {
-        read_fixed_width_value_fast(s, sb, src_pos, static_cast<uint2*>(dst));
+        read_fixed_width_value_fast<has_dict_t>(s, sb, src_pos, static_cast<uint2*>(dst));
       }
     } else if (dtype_len == 4) {
-      read_fixed_width_value_fast(s, sb, src_pos, static_cast<uint32_t*>(dst));
+      read_fixed_width_value_fast<has_dict_t>(s, sb, src_pos, static_cast<uint32_t*>(dst));
     } else {
       read_nbyte_fixed_width_value(s, sb, src_pos, static_cast<uint8_t*>(dst), dtype_len);
     }
@@ -1354,7 +1358,7 @@ CUDF_KERNEL void __launch_bounds__(decode_block_size_t, has_dict<kernel_mask_t>(
         decode_fixed_width_split_values<decode_block_size_t, has_lists_t, copy_mode_t>(
           s, sb, valid_count, next_valid_count, t);
       } else {
-        decode_fixed_width_values<decode_block_size_t, has_lists_t, copy_mode_t>(
+        decode_fixed_width_values<decode_block_size_t, has_lists_t, has_dict_t, copy_mode_t>(
           s, sb, valid_count, next_valid_count, t);
       }
     };

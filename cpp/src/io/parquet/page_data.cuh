@@ -283,6 +283,25 @@ inline __device__ void read_fixed_width_value_fast(auto* s, state_buf* sb, int s
   gpuStoreOutput(dst, dict, dict_pos, dict_size);
 }
 
+template <bool has_dict_t, typename T, typename state_buf>
+inline __device__ void read_fixed_width_value_fast(auto* s, state_buf* sb, int src_pos, T* dst)
+{
+  uint8_t const* dict;
+  uint32_t dict_pos;
+
+  if constexpr (has_dict_t) {
+    dict_pos = (s->stream.dict_bits > 0)
+                 ? sb->dict_idx[rolling_index<state_buf::dict_buf_size>(src_pos)]
+                 : 0;
+    dict = s->stream.dict_base;
+  } else {
+    dict_pos = src_pos;
+    dict     = s->stream.data_start;
+  }
+  dict_pos *= static_cast<uint32_t>(s->output_cvt.dtype_len_in);
+  gpuStoreOutput(dst, dict, dict_pos, s->stream.dict_size);
+}
+
 /**
  * @brief Output a N-byte value
  *
