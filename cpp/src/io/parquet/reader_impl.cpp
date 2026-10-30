@@ -828,11 +828,12 @@ table_with_metadata reader_impl::read_chunk_internal(read_mode mode)
   // trim pass only rewrites their nesting batch sizes with the full page value count already
   // computed by the base pass. Keep the trim pass for nested or page-pruned reads, where it
   // computes information that downstream allocation and decoding need.
-  auto const has_repetition =
+  auto const has_nested_columns =
     std::any_of(pass.chunks.begin(), pass.chunks.end(), [](auto const& c) {
-      return c.max_level[level_type::REPETITION] > 0;
+      return c.max_nesting_depth > 1 or c.max_level[level_type::REPETITION] > 0;
     });
-  if (uses_custom_row_bounds(mode) && (has_repetition || !subpass_page_mask_span().is_empty())) {
+  if (uses_custom_row_bounds(mode) &&
+      (has_nested_columns || !subpass_page_mask_span().is_empty())) {
     compute_page_sizes(subpass.pages,
                        pass.chunks,
                        subpass_page_mask_span(),
