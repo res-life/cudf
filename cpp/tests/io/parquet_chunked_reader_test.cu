@@ -1316,16 +1316,21 @@ TEST_F(ParquetChunkedReaderInputLimitConstrainedTest, DictionaryPartialRuns)
   constexpr cudf::size_type rows_to_skip = 137;
   constexpr cudf::size_type rows_to_read = 3000;
 
+  auto const validity_values =
+    std::views::iota(cudf::size_type{0}) |
+    std::views::transform([](auto i) { return (i % 7 != 0) && (i % 11 != 3); });
+  auto const validity = validity_values.begin();
+
   auto const repeated_values = cuda::make_constant_iterator(15);
-  cudf::test::fixed_width_column_wrapper<int32_t> repeated_col(repeated_values,
-                                                               repeated_values + num_rows);
+  cudf::test::fixed_width_column_wrapper<int32_t> repeated_col(
+    repeated_values, repeated_values + num_rows, validity);
 
   auto const literal_values =
     std::views::iota(cudf::size_type{0}) |
     std::views::transform([](auto i) { return static_cast<int32_t>((i * 37) % 257); });
   auto const literal_iter = literal_values.begin();
-  cudf::test::fixed_width_column_wrapper<int32_t> literal_col(literal_iter,
-                                                              literal_iter + num_rows);
+  cudf::test::fixed_width_column_wrapper<int32_t> literal_col(
+    literal_iter, literal_iter + num_rows, validity);
   auto const input = cudf::table_view{{repeated_col, literal_col}};
 
   auto const filepath = temp_env->get_temp_filepath("dictionary_partial_runs.parquet");

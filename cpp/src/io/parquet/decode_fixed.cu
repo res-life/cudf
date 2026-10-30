@@ -518,6 +518,7 @@ __device__ int update_validity_and_row_indices_nested(
  * @brief Update validity and row indices for flat types
  *
  * @tparam decode_block_size Size of the thread block
+ * @tparam items_per_thread Number of consecutive rows processed by each thread
  * @tparam level_t Definition level type
  * @tparam state_buf State buffer type
  *
@@ -529,12 +530,12 @@ __device__ int update_validity_and_row_indices_nested(
  *
  * @return Maximum depth valid count after processing
  */
-template <int decode_block_size, typename level_t, typename state_buf>
+template <int decode_block_size, int items_per_thread, typename level_t, typename state_buf>
 __device__ int update_validity_and_row_indices_flat(
   int32_t target_value_count, auto* s, state_buf* sb, level_t const* const def, int t)
 {
-  constexpr int items_per_thread = 2;
-  constexpr int max_batch_size   = decode_block_size * items_per_thread;
+  static_assert(items_per_thread == 2 || items_per_thread == 4);
+  constexpr int max_batch_size = decode_block_size * items_per_thread;
 
   auto& ni = s->nesting.nesting_info[0];
 
@@ -554,14 +555,22 @@ __device__ int update_validity_and_row_indices_flat(
   while (value_count < capped_target_value_count) {
     int const batch_size = min(max_batch_size, capped_target_value_count - value_count);
 
-    // Consecutive items per thread preserve row order in the block scan while
-    // doubling the rows handled by each collective.
+    // Consecutive items per thread preserve row order in the block scan while grouping multiple
+    // rows into each collective.
     int const thread_value_count = t * items_per_thread;
     int const pos0               = thread_value_count;
     int const pos1               = pos0 + 1;
+    int const pos2               = pos0 + 2;
+    int const pos3               = pos0 + 3;
     int const is_valid0     = pos0 < batch_size ? static_cast<int>(def[value_count + pos0] > 0) : 0;
     int const is_valid1     = pos1 < batch_size ? static_cast<int>(def[value_count + pos1] > 0) : 0;
-    int const thread_valids = is_valid0 + is_valid1;
+    int const is_valid2     = items_per_thread == 4 && pos2 < batch_size
+                                ? static_cast<int>(def[value_count + pos2] > 0)
+                                : 0;
+    int const is_valid3     = items_per_thread == 4 && pos3 < batch_size
+                                ? static_cast<int>(def[value_count + pos3] > 0)
+                                : 0;
+    int const thread_valids = is_valid0 + is_valid1 + is_valid2 + is_valid3;
 
     // thread and block validity count
     using block_scan = cub::BlockScan<int, decode_block_size>;
@@ -571,19 +580,11 @@ __device__ int update_validity_and_row_indices_flat(
 
     uint32_t const valid0 = ballot(is_valid0);
     uint32_t const valid1 = ballot(is_valid1);
+    uint32_t const valid2 = items_per_thread == 4 ? ballot(is_valid2) : 0;
+    uint32_t const valid3 = items_per_thread == 4 ? ballot(is_valid3) : 0;
     int const lane        = t % cudf::detail::warp_size;
     int const warp        = t / cudf::detail::warp_size;
     if (lane == 0) {
-      // Interleave the two ballots back into the original 64-row order.
-      auto spread_bits = [](uint32_t bits) {
-        uint64_t spread = bits;
-        spread          = (spread | (spread << 16)) & 0x0000ffff0000ffffULL;
-        spread          = (spread | (spread << 8)) & 0x00ff00ff00ff00ffULL;
-        spread          = (spread | (spread << 4)) & 0x0f0f0f0f0f0f0f0fULL;
-        spread          = (spread | (spread << 2)) & 0x3333333333333333ULL;
-        return (spread | (spread << 1)) & 0x5555555555555555ULL;
-      };
-      uint64_t validity = spread_bits(valid0) | (spread_bits(valid1) << 1);
       int const warp_value_count =
         min(cudf::detail::warp_size * items_per_thread,
             max(0, batch_size - warp * cudf::detail::warp_size * items_per_thread));
@@ -592,17 +593,53 @@ __device__ int update_validity_and_row_indices_flat(
       int const write_last_row  = min(warp_first_row + warp_value_count, last_row);
       int const write_count     = max(0, write_last_row - write_first_row);
       if (write_count > 0) {
-        validity >>= write_first_row - warp_first_row;
-        int const bit_offset = valid_map_offset + write_first_row - first_row;
-        store_validity(bit_offset,
-                       ni.valid_map,
-                       static_cast<uint32_t>(validity),
-                       min(write_count, cudf::detail::warp_size));
-        if (write_count > cudf::detail::warp_size) {
-          store_validity(bit_offset + cudf::detail::warp_size,
+        if constexpr (items_per_thread == 2) {
+          // Interleave the two ballots back into the original 64-row order.
+          auto spread_bits = [](uint32_t bits) {
+            uint64_t spread = bits;
+            spread          = (spread | (spread << 16)) & 0x0000ffff0000ffffULL;
+            spread          = (spread | (spread << 8)) & 0x00ff00ff00ff00ffULL;
+            spread          = (spread | (spread << 4)) & 0x0f0f0f0f0f0f0f0fULL;
+            spread          = (spread | (spread << 2)) & 0x3333333333333333ULL;
+            return (spread | (spread << 1)) & 0x5555555555555555ULL;
+          };
+          uint64_t validity = spread_bits(valid0) | (spread_bits(valid1) << 1);
+          validity >>= write_first_row - warp_first_row;
+          int const bit_offset = valid_map_offset + write_first_row - first_row;
+          store_validity(bit_offset,
                          ni.valid_map,
-                         static_cast<uint32_t>(validity >> cudf::detail::warp_size),
-                         write_count - cudf::detail::warp_size);
+                         static_cast<uint32_t>(validity),
+                         min(write_count, cudf::detail::warp_size));
+          if (write_count > cudf::detail::warp_size) {
+            store_validity(bit_offset + cudf::detail::warp_size,
+                           ni.valid_map,
+                           static_cast<uint32_t>(validity >> cudf::detail::warp_size),
+                           write_count - cudf::detail::warp_size);
+          }
+        } else {
+          // Each output word contains four adjacent values from eight consecutive lanes.
+          auto spread_bits = [](uint32_t bits) {
+            bits &= 0xff;
+            bits = (bits | (bits << 12)) & 0x000f000f;
+            bits = (bits | (bits << 6)) & 0x03030303;
+            return (bits | (bits << 3)) & 0x11111111;
+          };
+#pragma unroll
+          for (int word = 0; word < items_per_thread; ++word) {
+            int const word_first_row       = warp_first_row + word * cudf::detail::warp_size;
+            int const word_write_first_row = max(word_first_row, write_first_row);
+            int const word_write_last_row =
+              min(word_first_row + cudf::detail::warp_size, write_last_row);
+            int const word_write_count = word_write_last_row - word_write_first_row;
+            if (word_write_count > 0) {
+              uint32_t validity =
+                spread_bits(valid0 >> (word * 8)) | (spread_bits(valid1 >> (word * 8)) << 1) |
+                (spread_bits(valid2 >> (word * 8)) << 2) | (spread_bits(valid3 >> (word * 8)) << 3);
+              validity >>= word_write_first_row - word_first_row;
+              int const bit_offset = valid_map_offset + word_write_first_row - first_row;
+              store_validity(bit_offset, ni.valid_map, validity, word_write_count);
+            }
+          }
         }
       }
     }
@@ -616,6 +653,16 @@ __device__ int update_validity_and_row_indices_flat(
     if (is_valid1) {
       auto const src_pos = valid_count + thread_valid_count + is_valid0;
       sb->nz_idx[rolling_index<state_buf::nz_buf_size>(src_pos)] = value_count + pos1;
+    }
+    if constexpr (items_per_thread == 4) {
+      if (is_valid2) {
+        auto const src_pos = valid_count + thread_valid_count + is_valid0 + is_valid1;
+        sb->nz_idx[rolling_index<state_buf::nz_buf_size>(src_pos)] = value_count + pos2;
+      }
+      if (is_valid3) {
+        auto const src_pos = valid_count + thread_valid_count + is_valid0 + is_valid1 + is_valid2;
+        sb->nz_idx[rolling_index<state_buf::nz_buf_size>(src_pos)] = value_count + pos3;
+      }
     }
 
     // update stuff
@@ -1250,8 +1297,9 @@ CUDF_KERNEL void __launch_bounds__(decode_block_size_t, has_dict<kernel_mask_t>(
         next_valid_count = update_validity_and_row_indices_nested<decode_block_size_t, level_t>(
           processed_count, s, sb, def, t);
       } else {
-        next_valid_count = update_validity_and_row_indices_flat<decode_block_size_t, level_t>(
-          processed_count, s, sb, def, t);
+        next_valid_count =
+          update_validity_and_row_indices_flat<decode_block_size_t, has_dict_t ? 4 : 2, level_t>(
+            processed_count, s, sb, def, t);
       }
     }
     // if we wanted to split off the skip_rows/num_rows case into a separate kernel, we could skip
