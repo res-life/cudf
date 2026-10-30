@@ -100,6 +100,37 @@ std::unique_ptr<column> spark_murmurhash3_x86_32(
   rmm::device_async_resource_ref mr = cudf::get_current_device_resource_ref());
 
 /**
+ * @brief Computes Spark-compatible hash partition IDs without materializing the hashes
+ *
+ * Computes `pmod(spark_murmurhash3_x86_32(input, seed), num_partitions)` in the hash kernel.
+ * Each hash is interpreted as a signed INT32 before taking the positive modulo. The result
+ * can be passed directly to `cudf::partition` as its partition map.
+ *
+ * Hashing, null handling, and supported input types are identical to
+ * `spark_murmurhash3_x86_32`. In particular, null values leave the running hash unchanged;
+ * an all-null row produces the positive modulo of the signed seed. The default seed is `0`;
+ * pass `42` explicitly for Spark SQL hash partitioning.
+ *
+ * @param input The table of key columns to hash
+ * @param num_partitions Positive number of partitions
+ * @param seed Optional initial seed value, interpreted as unsigned
+ * @param stream CUDA stream used for device memory operations and kernel launches
+ * @param mr Device memory resource used to allocate the returned column's device memory
+ *
+ * @throws cudf::logic_error If `num_partitions <= 0`, including for empty input
+ * @throws cudf::logic_error If non-empty input contains an unsupported chrono resolution or a LIST
+ *                           column whose child is a STRUCT
+ *
+ * @returns A non-nullable INT32 column with values in `[0, num_partitions)`
+ */
+std::unique_ptr<column> spark_murmurhash3_x86_32_pmod(
+  table_view const& input,
+  size_type num_partitions,
+  uint32_t seed                     = DEFAULT_HASH_SEED,
+  cuda::stream_ref stream           = cudf::get_default_stream(),
+  rmm::device_async_resource_ref mr = cudf::get_current_device_resource_ref());
+
+/**
  * @brief Computes the MurmurHash3 64-bit hash value of each row in the given table
  *
  * This function takes a 64-bit seed value and returns hash values using the
