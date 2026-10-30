@@ -499,8 +499,18 @@ decompress_page_data(host_span<ColumnChunkDesc const> chunks,
                  "Unsupported Parquet compression type: " + parquet_compression_name(chunk.codec));
   }
 
+  std::array<bool, std::tuple_size_v<decltype(codecs)>> codec_in_use{};
+  for (auto codec_idx = 0u; codec_idx < codecs.size(); ++codec_idx) {
+    codec_in_use[codec_idx] =
+      std::any_of(chunks.begin(), chunks.end(), [&](auto const& chunk) {
+        return chunk.codec == codecs[codec_idx].compression_type;
+      });
+  }
+
   size_t total_pass_output_size = 0;
-  for (auto& codec : codecs) {
+  for (auto codec_idx = 0u; codec_idx < codecs.size(); ++codec_idx) {
+    if (not codec_in_use[codec_idx]) { continue; }
+    auto& codec = codecs[codec_idx];
     // Use an empty span as pass page mask as we don't want to filter out dictionary pages
     codec.add_pages(chunks, pass_pages, codec_stats::page_selection::DICT_PAGES, {});
     total_pass_output_size += codec.total_output_size;
@@ -510,7 +520,9 @@ decompress_page_data(host_span<ColumnChunkDesc const> chunks,
   size_t num_comp_pages    = 0;
   size_t num_level_pages   = 0;
   size_t total_output_size = 0;
-  for (auto& codec : codecs) {
+  for (auto codec_idx = 0u; codec_idx < codecs.size(); ++codec_idx) {
+    if (not codec_in_use[codec_idx]) { continue; }
+    auto& codec = codecs[codec_idx];
     codec.add_pages(
       chunks, subpass_pages, codec_stats::page_selection::NON_DICT_PAGES, subpass_page_mask);
     // at this point, the codec contains info for both dictionary pass pages and data subpass pages

@@ -34,11 +34,13 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <exception>
 #include <format>
 #include <functional>
 #include <future>
 #include <iterator>
 #include <limits>
+#include <new>
 #include <numeric>
 #include <optional>
 #include <ranges>
@@ -522,7 +524,7 @@ metadata::metadata(FileMetaData&& other) : FileMetaData(std::move(other))
   });
 }
 
-metadata::metadata(datasource* source, bool read_page_indexes)
+metadata::metadata(datasource* source, page_index_read_mode mode)
 {
   auto const buffer = cudf::io::parquet::fetch_footer_to_host(*source);
   decode_footer_and_init_schema({buffer->data(), buffer->size()}, this);
@@ -536,19 +538,35 @@ metadata::metadata(datasource* source, bool read_page_indexes)
   auto const has_strings =
     std::ranges::any_of(schema, [](auto const& elem) { return elem.type == Type::BYTE_ARRAY; });
 
-  // Column indexes are only used alongside offset indexes, skip if there are no offset indexes
-  auto const has_offset_index = [this] {
+  auto const valid_offset_index = [](auto const& col) {
+    return col.offset_index_offset > 0 and col.offset_index_length > 0;
+  };
+
+  // Column indexes are only used alongside offset indexes, skip if there are no offset indexes.
+  auto const has_offset_index = [&] {
     return std::ranges::any_of(
       row_groups | std::views::transform(&RowGroup::columns) | std::views::join,
-      [](auto const& col) { return col.offset_index_offset > 0 and col.offset_index_length > 0; });
+      valid_offset_index);
   };
+
+  // The reader can only use the offset-index header path when every selected chunk has an index.
+  // Projection happens after metadata construction, so require every chunk here to avoid paying
+  // the index I/O and parse cost for a partial-index fixed-width file that must later fall back.
+  auto const has_complete_offset_index = [&] {
+    auto const columns = row_groups | std::views::transform(&RowGroup::columns) | std::views::join;
+    return not std::ranges::empty(columns) and std::ranges::all_of(columns, valid_offset_index);
+  };
+
+  bool const read_full_indexes =
+    mode != page_index_read_mode::NEVER and has_strings and has_offset_index();
+  bool const read_fixed_offsets = mode == page_index_read_mode::STRING_OR_FIXED_LOCAL and
+                                  not has_strings and has_complete_offset_index();
 
   // Gather page index byte range info
   auto const page_index_range = [&]() -> text::byte_range_info {
-    // Don't read page index if not required or if we don't have strings or only have column indexes
-    if (not read_page_indexes or not has_strings or not has_offset_index()) { return {}; }
+    if (not read_full_indexes and not read_fixed_offsets) { return {}; }
     try {
-      auto const range = page_index_byte_range();
+      auto const range = page_index_byte_range(read_full_indexes);
       if (std::cmp_less_equal(range.offset() + range.size(), source->size())) { return range; }
     } catch (std::overflow_error const&) {
       // Page indexes are optional so skip them if their byte range is invalid
@@ -559,13 +577,34 @@ metadata::metadata(datasource* source, bool read_page_indexes)
   // Setup page indexes if available
   if (not page_index_range.is_empty()) {
     auto const page_idx_buf = source->host_read(page_index_range.offset(), page_index_range.size());
-    setup_page_index({page_idx_buf->data(), page_idx_buf->size()}, page_index_range.offset());
+    auto const page_index_bytes = std::span{page_idx_buf->data(), page_idx_buf->size()};
+    if (read_fixed_offsets) {
+      try {
+        setup_page_index(page_index_bytes, page_index_range.offset(), false);
+      } catch (std::bad_alloc const&) {
+        throw;
+      } catch (...) {
+        // Offset indexes are optional. Preserve the historical behavior for fixed-width files by
+        // discarding partially decoded indexes and falling back to parsing page headers.
+        for (auto& row_group : row_groups) {
+          for (auto& column : row_group.columns) {
+            column.column_index.reset();
+            column.offset_index.reset();
+          }
+        }
+        is_page_index_setup_ = false;
+        CUDF_LOG_WARN(
+          "Unable to decode an optional Parquet offset index; falling back to page headers");
+      }
+    } else {
+      setup_page_index(page_index_bytes, page_index_range.offset(), true);
+    }
   }
 
   sanitize_schema();
 }
 
-text::byte_range_info metadata::page_index_byte_range() const
+text::byte_range_info metadata::page_index_byte_range(bool include_column_indexes) const
 {
   if (is_page_index_setup_) { return {}; }
 
@@ -588,7 +627,9 @@ text::byte_range_info metadata::page_index_byte_range() const
 
   for (auto const& row_group : row_groups) {
     for (auto const& column : row_group.columns) {
-      update_extent(column.column_index_offset, column.column_index_length);
+      if (include_column_indexes) {
+        update_extent(column.column_index_offset, column.column_index_length);
+      }
       update_extent(column.offset_index_offset, column.offset_index_length);
     }
   }
@@ -597,7 +638,9 @@ text::byte_range_info metadata::page_index_byte_range() const
   return {min_offset, max_offset - min_offset};
 }
 
-void metadata::setup_page_index(std::span<uint8_t const> page_index_bytes, int64_t min_offset)
+void metadata::setup_page_index(std::span<uint8_t const> page_index_bytes,
+                                int64_t min_offset,
+                                bool include_column_indexes)
 {
   if (is_page_index_setup_) { return; }
 
@@ -612,19 +655,32 @@ void metadata::setup_page_index(std::span<uint8_t const> page_index_bytes, int64
     }
   }
 
-  auto read_column_indexes = [page_index_bytes, min_offset](CompactProtocolReader& reader,
-                                                            ColumnChunk& col) {
-    if (col.column_index_length > 0 && col.column_index_offset > 0) {
+  auto const index_in_range = [page_index_bytes, min_offset](int64_t offset, int32_t length) {
+    if (offset < min_offset or length <= 0) { return false; }
+    auto const relative_offset = static_cast<uint64_t>(offset - min_offset);
+    return relative_offset <= page_index_bytes.size() and
+           static_cast<uint64_t>(length) <= page_index_bytes.size() - relative_offset;
+  };
+
+  auto read_column_indexes = [page_index_bytes, min_offset, include_column_indexes, index_in_range](
+                               CompactProtocolReader& reader, ColumnChunk& col) {
+    if (include_column_indexes and
+        index_in_range(col.column_index_offset, col.column_index_length)) {
       int64_t const offset = col.column_index_offset - min_offset;
       reader.init(page_index_bytes.data() + offset, col.column_index_length);
       col.column_index = ColumnIndex();
       reader.read(&col.column_index.value());
     }
-    if (col.offset_index_length > 0 && col.offset_index_offset > 0) {
+    if (index_in_range(col.offset_index_offset, col.offset_index_length)) {
       int64_t const offset = col.offset_index_offset - min_offset;
       reader.init(page_index_bytes.data() + offset, col.offset_index_length);
       col.offset_index = OffsetIndex();
       reader.read(&col.offset_index.value());
+      if (not include_column_indexes) {
+        CUDF_EXPECTS(
+          not reader.overread() and std::cmp_equal(reader.bytecount(), col.offset_index_length),
+          "Unable to decode Parquet offset index");
+      }
     }
   };
 
@@ -666,9 +722,17 @@ void metadata::setup_page_index(std::span<uint8_t const> page_index_bytes, int64
       start_idx = end_idx;
     }
 
+    // Join every task before propagating a parse failure: worker tasks reference the byte buffer
+    // and local chunk list, so returning on the first exception could leave dangling references.
+    std::exception_ptr first_error;
     for (auto& task : tasks) {
-      task.get();
+      try {
+        task.get();
+      } catch (...) {
+        if (not first_error) { first_error = std::current_exception(); }
+      }
     }
+    if (first_error) { std::rethrow_exception(first_error); }
   } else {
     CompactProtocolReader cp(page_index_bytes.data(), page_index_bytes.size());
     // For small numbers of columns, use sequential processing to avoid overhead
@@ -696,11 +760,10 @@ metadata::~metadata()
 }
 
 std::vector<metadata> aggregate_reader_metadata::metadatas_from_sources(
-  std::span<std::unique_ptr<datasource> const> sources, bool read_page_indexes)
+  std::span<std::unique_ptr<datasource> const> sources, page_index_read_mode mode)
 {
-  return parallel_construct_metadatas(sources, [read_page_indexes](auto const& source) {
-    return metadata{source.get(), read_page_indexes};
-  });
+  return parallel_construct_metadatas(
+    sources, [mode](auto const& source) { return metadata{source.get(), mode}; });
 }
 
 std::vector<std::unordered_map<std::string, std::string>>
@@ -1012,8 +1075,8 @@ aggregate_reader_metadata::aggregate_reader_metadata(
   std::span<std::unique_ptr<datasource> const> sources,
   bool use_arrow_schema,
   bool has_cols_from_mismatched_srcs,
-  bool read_page_indexes)
-  : per_file_metadata(metadatas_from_sources(sources, read_page_indexes)),
+  page_index_read_mode mode)
+  : per_file_metadata(metadatas_from_sources(sources, mode)),
     keyval_maps(collect_keyval_metadata()),
     schema_idx_maps(init_schema_idx_maps(has_cols_from_mismatched_srcs)),
     num_rows(calc_num_rows()),

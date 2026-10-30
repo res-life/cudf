@@ -32,6 +32,7 @@
 
 #include <algorithm>
 #include <bitset>
+#include <filesystem>
 #include <limits>
 #include <numeric>
 #include <optional>
@@ -39,6 +40,24 @@
 #include <utility>
 
 namespace cudf::io::parquet::detail {
+
+namespace {
+
+page_index_read_mode page_index_mode_for_reader(source_info const& source, std::size_t num_sources)
+{
+  if (source.type() != io_type::FILEPATH or source.filepaths().size() != num_sources) {
+    return page_index_read_mode::STRING_COLUMNS;
+  }
+
+  auto const all_local_files = std::ranges::all_of(source.filepaths(), [](auto const& path) {
+    std::error_code error;
+    return std::filesystem::is_regular_file(path, error);
+  });
+  return all_local_files ? page_index_read_mode::STRING_OR_FIXED_LOCAL
+                         : page_index_read_mode::STRING_COLUMNS;
+}
+
+}  // namespace
 
 void reader_impl::decode_page_data(read_mode mode, size_t skip_rows, size_t num_rows)
 {
@@ -62,6 +81,43 @@ void reader_impl::decode_page_data(read_mode mode, size_t skip_rows, size_t num_
 
   auto const kernel_mask = subpass.kernel_mask;
   auto const has_strings = (kernel_mask & STRINGS_MASK) != 0;
+
+  // Fixed-width flat pages can be decoded independently, and an empty page mask means no page
+  // pruning state needs to be preserved. Compact the pages to the current output row range so the
+  // decoders do not launch blocks for every page in the subpass on every read_chunk() call.
+  constexpr auto fixed_width_flat_mask =
+    BitOr(decode_kernel_mask::FIXED_WIDTH_NO_DICT, decode_kernel_mask::FIXED_WIDTH_DICT);
+  auto const can_compact_pages = kernel_mask != 0 && (kernel_mask & ~fixed_width_flat_mask) == 0 &&
+                                 subpass_page_mask_span().is_empty() &&
+                                 std::ranges::none_of(pass.chunks, [](auto const& chunk) {
+                                   return chunk.max_level[level_type::REPETITION] > 0;
+                                 });
+  auto decode_pages = cudf::detail::hostdevice_span<PageInfo>{subpass.pages};
+  if (can_compact_pages) {
+    if (subpass.decode_page_buf.size() != subpass.pages.size()) {
+      subpass.decode_page_buf = cudf::detail::hostdevice_vector<PageInfo>(
+        subpass.pages.size(), _stream, _mr.as_temporary());
+    }
+    auto const read_end     = skip_rows + num_rows;
+    auto active_end         = std::copy_if(subpass.pages.host_begin(),
+                                   subpass.pages.host_end(),
+                                   subpass.decode_page_buf.begin(),
+                                   [&](auto const& page) {
+                                     if ((page.flags & PAGEINFO_FLAGS_DICTIONARY) != 0) {
+                                       return false;
+                                     }
+                                     auto const& chunk = pass.chunks[page.chunk_idx];
+                                     auto const page_start =
+                                       static_cast<size_t>(chunk.start_row) + page.chunk_row;
+                                     auto const page_end = page_start + page.num_rows;
+                                     return page_start < read_end && page_end > skip_rows;
+                                   });
+    auto const active_count = static_cast<size_t>(active_end - subpass.decode_page_buf.begin());
+    CUDF_EXPECTS(active_count > 0, "No Parquet pages overlap the output chunk row range");
+    decode_pages = static_cast<cudf::detail::hostdevice_span<PageInfo>>(subpass.decode_page_buf)
+                     .subspan(0, active_count);
+    decode_pages.host_to_device_async(_stream);
+  }
 
   // Check to see if there are any string columns present. If so, then we need to get size info
   // for each string page. This size info will be used to pre-allocate memory for the column,
@@ -212,7 +268,7 @@ void reader_impl::decode_page_data(read_mode mode, size_t skip_rows, size_t num_
   // neither kernel.
   auto has_flat_nz_map     = false;
   auto needs_level_decoder = false;
-  std::for_each(subpass.pages.host_begin(), subpass.pages.host_end(), [&](PageInfo const& page) {
+  std::for_each(decode_pages.host_begin(), decode_pages.host_end(), [&](PageInfo const& page) {
     auto const mapped = _nz_map_enabled && page.has_nz_map(nz_map_kind::DELTA_FLAT);
     has_flat_nz_map |= mapped;
     needs_level_decoder |=
@@ -228,7 +284,7 @@ void reader_impl::decode_page_data(read_mode mode, size_t skip_rows, size_t num_
   auto const nz_map_stream = has_flat_nz_map ? streams.back() : _stream;
 
   if (has_flat_nz_map) {
-    precompute_flat_nz_map(subpass.pages,
+    precompute_flat_nz_map(decode_pages,
                            pass.chunks,
                            subpass_page_mask_span(),
                            skip_rows,
@@ -240,7 +296,7 @@ void reader_impl::decode_page_data(read_mode mode, size_t skip_rows, size_t num_
   int s_idx = 0;
 
   auto decode_data = [&](decode_kernel_mask decoder_mask) {
-    detail::decode_page_data(subpass.pages,
+    detail::decode_page_data(decode_pages,
                              pass.chunks,
                              num_rows,
                              skip_rows,
@@ -305,7 +361,7 @@ void reader_impl::decode_page_data(read_mode mode, size_t skip_rows, size_t num_
 
   // launch delta byte array decoder
   if (BitAnd(kernel_mask, decode_kernel_mask::DELTA_BYTE_ARRAY) != 0) {
-    decode_delta_byte_array(subpass.pages,
+    decode_delta_byte_array(decode_pages,
                             pass.chunks,
                             num_rows,
                             skip_rows,
@@ -318,7 +374,7 @@ void reader_impl::decode_page_data(read_mode mode, size_t skip_rows, size_t num_
 
   // launch delta length byte array decoder
   if (BitAnd(kernel_mask, decode_kernel_mask::DELTA_LENGTH_BA) != 0) {
-    decode_delta_length_byte_array(subpass.pages,
+    decode_delta_length_byte_array(decode_pages,
                                    pass.chunks,
                                    num_rows,
                                    skip_rows,
@@ -332,7 +388,7 @@ void reader_impl::decode_page_data(read_mode mode, size_t skip_rows, size_t num_
   // launch delta binary decoder
   if (BitAnd(kernel_mask, decode_kernel_mask::DELTA_BINARY) != 0) {
     auto const delta_stream = streams[s_idx++];
-    decode_delta_binary(subpass.pages,
+    decode_delta_binary(decode_pages,
                         pass.chunks,
                         num_rows,
                         skip_rows,
@@ -362,7 +418,7 @@ void reader_impl::decode_page_data(read_mode mode, size_t skip_rows, size_t num_
 
   // launch byte stream split decoder
   if (BitAnd(kernel_mask, decode_kernel_mask::BYTE_STREAM_SPLIT) != 0) {
-    decode_split_page_data(subpass.pages,
+    decode_split_page_data(decode_pages,
                            pass.chunks,
                            num_rows,
                            skip_rows,
@@ -419,7 +475,7 @@ void reader_impl::decode_page_data(read_mode mode, size_t skip_rows, size_t num_
 
   // launch the catch-all page decoder
   if (BitAnd(kernel_mask, decode_kernel_mask::GENERAL) != 0) {
-    detail::decode_page_data(subpass.pages,
+    detail::decode_page_data(decode_pages,
                              pass.chunks,
                              num_rows,
                              skip_rows,
@@ -436,7 +492,7 @@ void reader_impl::decode_page_data(read_mode mode, size_t skip_rows, size_t num_
   subpass.delta_temp_buf = cuda::device_buffer<uint8_t>(
     _stream, subpass.delta_temp_buf.memory_resource(), 0, cuda::no_init);
 
-  subpass.pages.device_to_host_async(_stream);
+  decode_pages.device_to_host_async(_stream);
   page_nesting.device_to_host_async(_stream);
   page_nesting_decode.device_to_host_async(_stream);
 
@@ -509,8 +565,8 @@ void reader_impl::decode_page_data(read_mode mode, size_t skip_rows, size_t num_
   write_final_offsets(pinned_final_offsets, pinned_out_buffers, _stream);
 
   // update null counts in the final column buffers
-  for (size_t idx = 0; idx < subpass.pages.size(); idx++) {
-    PageInfo* pi = &subpass.pages[idx];
+  for (size_t idx = 0; idx < decode_pages.size(); idx++) {
+    PageInfo* pi = &decode_pages[idx];
     if (pi->flags & PAGEINFO_FLAGS_DICTIONARY) { continue; }
     ColumnChunkDesc* col               = &pass.chunks[pi->chunk_idx];
     input_column_info const& input_col = _input_columns[col->src_col_index];
@@ -594,14 +650,16 @@ reader_impl::reader_impl(std::size_t chunk_read_limit,
   CUDF_EXPECTS(file_metadatas.empty() or file_metadatas.size() == _sources.size(),
                "Encountered a mismatch in the number of provided data sources and metadatas");
 
-  _metadata = file_metadatas.empty() ? std::make_shared<aggregate_reader_metadata>(
-                                         _sources,
-                                         options.is_enabled_use_arrow_schema(),
-                                         has_cols_from_mismatched_sources(options))
-                                     : std::make_shared<aggregate_reader_metadata>(
-                                         std::forward<std::vector<FileMetaData>>(file_metadatas),
-                                         options.is_enabled_use_arrow_schema(),
-                                         has_cols_from_mismatched_sources(options));
+  _metadata = file_metadatas.empty()
+                ? std::make_shared<aggregate_reader_metadata>(
+                    _sources,
+                    options.is_enabled_use_arrow_schema(),
+                    has_cols_from_mismatched_sources(options),
+                    page_index_mode_for_reader(options.get_source(), _sources.size()))
+                : std::make_shared<aggregate_reader_metadata>(
+                    std::forward<std::vector<FileMetaData>>(file_metadatas),
+                    options.is_enabled_use_arrow_schema(),
+                    has_cols_from_mismatched_sources(options));
 
   // Number of input sources
   _num_sources = _sources.size();
@@ -766,7 +824,16 @@ table_with_metadata reader_impl::read_chunk_internal(read_mode mode)
   // account. PageInfo::skipped_values, which tells us where to start decoding in the input to
   // respect the user bounds. It is only necessary to do this second pass if uses_custom_row_bounds
   // is set (if the user has specified artificial bounds).
-  if (uses_custom_row_bounds(mode)) {
+  // Flat pages are decoded from the beginning and filtered by row bounds in the decoder. The
+  // trim pass only rewrites their nesting batch sizes with the full page value count already
+  // computed by the base pass. Keep the trim pass for nested or page-pruned reads, where it
+  // computes information that downstream allocation and decoding need.
+  auto const has_nested_columns =
+    std::any_of(pass.chunks.begin(), pass.chunks.end(), [](auto const& c) {
+      return c.max_nesting_depth > 1 or c.max_level[level_type::REPETITION] > 0;
+    });
+  if (uses_custom_row_bounds(mode) &&
+      (has_nested_columns || !subpass_page_mask_span().is_empty())) {
     compute_page_sizes(subpass.pages,
                        pass.chunks,
                        subpass_page_mask_span(),
@@ -1135,10 +1202,10 @@ void reader_impl::update_output_nullmasks_for_pruned_pages(cudf::host_span<bool 
   auto const& chunks     = _pass_itm_data->chunks;
   auto const num_columns = _input_columns.size();
 
+  // An empty mask means all pages are required.
+  if (page_mask.empty()) { return; }
   CUDF_EXPECTS(pages.size() == page_mask.size(), "Page mask size mismatch");
-
-  // Return early if page mask is empty or all pages are required
-  if (page_mask.empty() or std::ranges::all_of(page_mask, std::identity{})) { return; }
+  if (std::ranges::all_of(page_mask, std::identity{})) { return; }
 
   auto page_and_mask_begin =
     cuda::make_zip_iterator(cuda::std::make_tuple(pages.host_begin(), page_mask.begin()));
@@ -1267,11 +1334,11 @@ parquet_metadata read_parquet_metadata(std::span<std::unique_ptr<datasource> con
   constexpr auto has_column_projection = false;
 
   // Do not read page indexes as it's not used to construct `parquet_metadata`.
-  constexpr auto read_page_indexes = false;
+  constexpr auto page_index_mode = page_index_read_mode::NEVER;
 
   // Open and parse the source dataset metadata
   auto metadata =
-    aggregate_reader_metadata(sources, use_arrow_schema, has_column_projection, read_page_indexes);
+    aggregate_reader_metadata(sources, use_arrow_schema, has_column_projection, page_index_mode);
 
   return parquet_metadata{parquet_schema{walk_schema(&metadata, 0)},
                           metadata.get_num_rows(),
@@ -1289,11 +1356,11 @@ std::vector<parquet::FileMetaData> read_parquet_footers(
   if (sources.empty()) { return {}; }
 
   // Read page indexes if available here since we will want to reuse the raw metadata for later use.
-  constexpr auto read_page_indexes = true;
+  constexpr auto page_index_mode = page_index_read_mode::STRING_COLUMNS;
 
   // Parse sources into FileMetaData objects
   return parallel_construct_metadatas(sources, [](auto const& source) {
-    return FileMetaData{metadata{source.get(), read_page_indexes}};
+    return FileMetaData{metadata{source.get(), page_index_mode}};
   });
 }
 

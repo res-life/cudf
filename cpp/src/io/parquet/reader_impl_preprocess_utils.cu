@@ -603,16 +603,15 @@ void decode_page_headers_impl(pass_intermediate_data& pass,
     }
   }
 
-  // compute max bytes needed for level data
-  auto level_bit_size = cudf::detail::make_counting_transform_iterator(
-    0, cuda::proclaim_return_type<int32_t>([chunks = pass.chunks.d_begin()] __device__(int i) {
-      auto c = chunks[i];
-      return cuda::std::max<int32_t>(c.level_bits[level_type::REPETITION],
-                                     c.level_bits[level_type::DEFINITION]);
-    }));
-  // max level data bit size.
-  auto const max_level_bits = cudf::detail::reduce(
-    level_bit_size, level_bit_size + pass.chunks.size(), int{0}, cuda::maximum<int>{}, stream);
+  // The level widths are schema metadata initialized on the host and never changed by header
+  // decoding. Reuse that mirror instead of launching a device reduction and synchronizing a
+  // scalar back to the host.
+  auto const max_level_bits = std::accumulate(
+    pass.chunks.begin(), pass.chunks.end(), int{0}, [](int max_bits, auto const& chunk) {
+      return std::max<int>(max_bits,
+                           std::max<int>(chunk.level_bits[level_type::REPETITION],
+                                         chunk.level_bits[level_type::DEFINITION]));
+    });
   pass.level_type_size = std::max<int32_t>(1, cudf::util::div_rounding_up_safe(max_level_bits, 8));
 
   // sort the pages in chunk/schema order.
@@ -621,29 +620,23 @@ void decode_page_headers_impl(pass_intermediate_data& pass,
                device_span<ColumnChunkDesc const>(pass.chunks.device_ptr(), pass.chunks.size()),
                stream);
 
-  // compute offsets to each group of input pages.
-  // page_keys:   1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3
-  //
-  // result:      0,          4,          8
-  cuda::device_buffer<size_type> page_counts(
-    stream, cudf::get_current_device_resource_ref(), pass.pages.size() + 1, cuda::no_init);
-  auto page_keys =
-    make_page_key_iterator(device_span<PageInfo const>(pass.pages.device_ptr(), pass.pages.size()));
-  auto const page_counts_end = cudf::detail::reduce_by_key(page_keys,
-                                                           page_keys + pass.pages.size(),
-                                                           cuda::make_constant_iterator(1),
-                                                           cuda::make_discard_iterator(),
-                                                           page_counts.begin(),
-                                                           cuda::std::plus<>{},
-                                                           stream)
-                                 .second;
-  auto const num_page_counts = page_counts_end - page_counts.begin();
-  pass.page_offsets          = cuda::device_buffer<size_type>(
-    stream, cudf::get_current_device_resource_ref(), num_page_counts + 1, cuda::no_init);
-  thrust::exclusive_scan(rmm::exec_policy_nosync(stream, cudf::get_current_device_resource_ref()),
-                         page_counts.begin(),
-                         page_counts.begin() + num_page_counts + 1,
-                         pass.page_offsets.begin());
+  // Header counting has already populated the host chunk mirror. Build the per-column page
+  // offsets from those counts instead of reducing the sorted PageInfo array on the device and
+  // synchronizing the number of output runs back to the host.
+  auto const num_columns = std::accumulate(
+    pass.chunks.begin(), pass.chunks.end(), size_t{0}, [](size_t count, auto const& chunk) {
+      return std::max(count, static_cast<size_t>(chunk.src_col_index + 1));
+    });
+  auto page_offsets = cudf::detail::make_pinned_vector_async<size_type>(num_columns + 1, stream);
+  std::fill(page_offsets.begin(), page_offsets.end(), size_type{0});
+  for (auto const& chunk : pass.chunks) {
+    page_offsets[chunk.src_col_index + 1] += chunk.num_data_pages + chunk.num_dict_pages;
+  }
+  std::partial_sum(page_offsets.begin(), page_offsets.end(), page_offsets.begin());
+  pass.page_offsets = cudf::detail::make_device_buffer_async(
+    host_span<size_type const>{page_offsets.data(), page_offsets.size()},
+    stream,
+    cudf::get_current_device_resource_ref());
 
   // setup dict_page for each chunk if necessary
   thrust::for_each(rmm::exec_policy_nosync(stream, cudf::get_current_device_resource_ref()),

@@ -182,8 +182,12 @@ template <typename level_t,
           int decode_threads,
           int max_output_values,
           bool use_chunked_expand   = false,
-          int smem_stage_size_bytes = 8 * 1024>
+          int smem_stage_size_bytes = 8 * 1024,
+          int max_chunk_runs        = max_runs_per_chunk,
+          bool allow_partial_runs   = false>
 struct rle_stream {
+  static_assert(use_chunked_expand || not allow_partial_runs,
+                "partial-run support requires chunked-expand mode");
   static constexpr int num_rle_stream_decode_threads = decode_threads;
   // the -1 here is for the look-ahead warp that fills in the list of runs to be decoded
   // in an overlapped manner. so if we had 16 total warps:
@@ -235,6 +239,14 @@ struct rle_stream {
   // boolean streams all benefit with identical code. Streams that do not fit
   // the budget transparently fall back to parsing from global.
   static constexpr int smem_stage_size = smem_stage_size_bytes;
+
+  // Chunked-expand cross-call partial-run state, used only when allow_partial_runs is true. A run
+  // that straddles a decode_next_chunked() boundary is resumed without reparsing because cur
+  // already points past its payload.
+  static constexpr uint32_t no_partial_run = ~0u;
+  uint32_t partial_run_meta;
+  int partial_run_total;
+  int partial_run_done;
 
   // Ring-mode streams need a shared-memory ring buffer of run headers to
   // coordinate the producer/consumer warps in decode_next_ring. Chunked-expand
@@ -308,6 +320,12 @@ struct rle_stream {
     // Anchor s_start to the (possibly rebased) cur so chunked-expand meta
     // offsets index into the same memory space that the parse cursor uses.
     s_start = cur;
+
+    if constexpr (allow_partial_runs) {
+      partial_run_meta  = no_partial_run;
+      partial_run_total = 0;
+      partial_run_done  = 0;
+    }
   }
 
   __device__ inline int get_rle_run_info(rle_run& run)
@@ -473,15 +491,14 @@ struct rle_stream {
    * every warp busy even when runs are highly non-uniform in size, at the
    * cost of an extra intra-block sync per chunk.
    *
-   * The current sole caller passes max_output_values = INT_MAX, so a single
-   * RLE run can never exceed the requested `count`. A cudf_assert in the
-   * header-parse loop enforces this invariant; a future caller that needs to
-   * split runs across calls must restore the partial-run resume machinery
-   * removed in this commit.
+   * If allow_partial_runs is true, a single RLE run may exceed the requested `count`; the
+   * remainder is saved in partial_run_* and resumed on the next call. Otherwise the caller must
+   * invoke this method only once and the final run is clamped to its output window.
    */
   template <typename Group>
   __device__ inline int decode_next_chunked(Group const& group, int count)
   {
+    static_assert(max_chunk_runs > 0, "chunked-expand requires at least one run slot");
     int const output_count = min(count, total_values - cur_values);
 
     // Per-chunk shared-memory scratch. `chunk_out_off[i]` is the exclusive
@@ -489,10 +506,11 @@ struct rle_stream {
     // occupies output positions [chunk_out_off[i], chunk_out_off[i+1]).
     // `chunk_meta[i]` encodes both the payload offset (into s_start) and,
     // in the top bit, whether the run is literal (1) or RLE (0).
-    __shared__ int chunk_out_off[max_runs_per_chunk + 1];
-    __shared__ uint32_t chunk_meta[max_runs_per_chunk];
-    cuda::std::span<int> const chunk_out_off_v{chunk_out_off, max_runs_per_chunk + 1};
-    cuda::std::span<uint32_t> const chunk_meta_v{chunk_meta, max_runs_per_chunk};
+    __shared__ int chunk_out_off[max_chunk_runs + 1];
+    __shared__ uint32_t chunk_meta[max_chunk_runs];
+    cuda::std::span<int> const chunk_out_off_v{chunk_out_off, max_chunk_runs + 1};
+    cuda::std::span<uint32_t> const chunk_meta_v{chunk_meta, max_chunk_runs};
+    __shared__ int s_run0_payload_offset;
     __shared__ int s_chunk_runs;   // number of runs parsed in this chunk (num_runs)
     __shared__ int s_chunk_total;  // sum of run lengths in this chunk (run_prefix_end)
     __shared__ int s_base_out;     // absolute output pos where this chunk starts
@@ -510,7 +528,7 @@ struct rle_stream {
     int const out_end         = cur_values + output_count;
 
     // Outer loop: process the requested output range in chunks of up to
-    // `max_runs_per_chunk` runs at a time until we have emitted `output_count`
+    // `max_chunk_runs` runs at a time until we have emitted `output_count`
     // values or run out of encoded input.
     while (out_pos_total < out_end) {
       // ----- Phase 1: single-thread run-header parse ------------------
@@ -519,17 +537,35 @@ struct rle_stream {
       // it may choose different threads across calls, but `cur` is per-thread
       // rle_stream state that must persist on thread 0.
       // The other threads wait at the group.sync() below. This is cheap because
-      // it is bounded by max_runs_per_chunk headers and header parsing is
+      // it is bounded by max_chunk_runs headers and header parsing is
       // inherently serial.
       if (group.thread_rank() == 0) {
-        int run_prefix_end = 0;
-        int num_runs       = 0;
-        int out_base       = out_pos_total;
-        chunk_out_off_v[0] = 0;
-        // Parse up to max_runs_per_chunk headers, stopping early if the output range
+        int run_prefix_end    = 0;
+        int num_runs          = 0;
+        int out_base          = out_pos_total;
+        chunk_out_off_v[0]    = 0;
+        s_run0_payload_offset = 0;
+
+        if constexpr (allow_partial_runs) {
+          if (partial_run_meta != no_partial_run) {
+            int const remaining   = partial_run_total - partial_run_done;
+            int const room        = out_end - out_base;
+            int const run_len     = min(remaining, room);
+            chunk_meta_v[0]       = partial_run_meta;
+            chunk_out_off_v[1]    = run_len;
+            s_run0_payload_offset = partial_run_done;
+            num_runs              = 1;
+            run_prefix_end        = run_len;
+            if (run_len < remaining) {
+              partial_run_done += run_len;
+            } else {
+              partial_run_meta = no_partial_run;
+            }
+          }
+        }
+        // Parse up to max_chunk_runs headers, stopping early if the output range
         // fills up or the encoded stream is exhausted.
-        while (num_runs < max_runs_per_chunk && (out_base + run_prefix_end) < out_end &&
-               cur < end) {
+        while (num_runs < max_chunk_runs && (out_base + run_prefix_end) < out_end && cur < end) {
           uint32_t const level_run = get_vlq32(cur, end);
 
           // Parquet RLE header format: LSB selects the encoding.
@@ -551,20 +587,23 @@ struct rle_stream {
             run_desc = static_cast<uint32_t>(cur - s_start);
             cur += value_width;
           }
-          // Clamp the run to the remaining output window. A run can legally
-          // straddle out_end when row-range filtering makes output_count
-          // smaller than INT_MAX (e.g. skip_rows / num_rows / bounds-page
-          // filtering in preprocess_levels_kernel). Without clamping, Phase 2
-          // would write past the output buffer causing silent data corruption.
-          // `cur` has already been advanced past the full payload above, which
-          // is correct: we emit only `run_len` values but do not need to
-          // re-parse the header on any subsequent call (the outer loop exits
-          // after this chunk because out_pos_total will equal out_end).
           int const room = out_end - (out_base + run_prefix_end);
-          run_len        = min(run_len, room);
+          if constexpr (allow_partial_runs) {
+            if (run_len > room) {
+              partial_run_meta  = run_desc;
+              partial_run_total = run_len;
+              partial_run_done  = room;
+              run_len           = room;
+            }
+          } else {
+            run_len = min(run_len, room);
+          }
           run_prefix_end += run_len;
           chunk_meta_v[num_runs]      = run_desc;
           chunk_out_off_v[++num_runs] = run_prefix_end;
+          if constexpr (allow_partial_runs) {
+            if (partial_run_meta != no_partial_run) { break; }
+          }
         }
         s_chunk_runs  = num_runs;
         s_chunk_total = run_prefix_end;
@@ -576,9 +615,10 @@ struct rle_stream {
       // All warps see the same chunk_out_off / chunk_meta tables. We split
       // the flat output range [0, chunk_total) into `num_warps` equal-ish
       // slices and each warp writes its slice.
-      int const chunk_runs  = s_chunk_runs;
-      int const chunk_total = s_chunk_total;
-      int const base_out    = s_base_out;
+      int const chunk_runs          = s_chunk_runs;
+      int const chunk_total         = s_chunk_total;
+      int const base_out            = s_base_out;
+      int const run0_payload_offset = allow_partial_runs ? s_run0_payload_offset : 0;
 
       if (chunk_runs == 0) { break; }
 
@@ -604,27 +644,34 @@ struct rle_stream {
                                                   out_pos) -
                            chunk_out_off_v.begin()) -
           1;
+        int run_start_out = chunk_out_off_v[run_idx];
+        int run_end_out   = chunk_out_off_v[run_idx + 1];
+        uint32_t run_desc = chunk_meta_v[run_idx];
         while (out_pos < hi) {
           // Linear walk forward: no iterations if we're still in the same
           // run (long run case), 1+ iterations only when out_pos crosses one
           // or more short-run boundaries.
-          while (run_idx < chunk_runs && chunk_out_off_v[run_idx + 1] <= out_pos) {
+          while (run_idx < chunk_runs && run_end_out <= out_pos) {
             ++run_idx;
+            run_start_out = run_end_out;
+            run_end_out   = chunk_out_off_v[run_idx + 1];
+            run_desc      = chunk_meta_v[run_idx];
           }
-          int const run_start_out = chunk_out_off_v[run_idx];
-          uint32_t const run_desc = chunk_meta_v[run_idx];
+          int const run_payload_offset = (run_idx == 0) ? run0_payload_offset : 0;
 
           if (run_desc & run_desc_literal_flag) {
             // Literal (bit-packed) run: bit-field extract for this lane's
             // out_pos.
             uint32_t const payload_off = run_desc & run_desc_offset_mask;
             uint8_t const* payload     = s_start + payload_off;
-            int const local            = out_pos - run_start_out;
+            int const local            = out_pos - run_start_out + run_payload_offset;
             int bitpos                 = local * level_bits;
             uint8_t const* source      = payload + (bitpos >> 3);
             bitpos &= 7;
             uint32_t level_val;
-            if (source + sizeof(uint32_t) <= end) {
+            if (level_bits == 1) {
+              level_val = source < end ? source[0] : 0;
+            } else if (source + sizeof(uint32_t) <= end) {
               // Fast path: whole 32-bit field is in-bounds, so one unaligned
               // load replaces up to four dependent byte reads.
               level_val = cudf::io::unaligned_load<uint32_t>(source);
@@ -747,7 +794,11 @@ struct rle_stream {
 
   __device__ inline int skip_decode(int t, int count)
   {
-    static_assert(not use_chunked_expand, "skip_decode is not supported by chunked-expand");
+    static_assert(not use_chunked_expand || allow_partial_runs,
+                  "skip_decode requires partial-run support in chunked-expand mode");
+    if constexpr (use_chunked_expand) {
+      cudf_assert(cur_values == 0 && partial_run_meta == no_partial_run);
+    }
     int const output_count = min(count, total_values - cur_values);
 
     // if level_bits == 0, there's nothing to do
@@ -759,7 +810,17 @@ struct rle_stream {
   __device__ inline int decode_next(int t) { return decode_next(t, max_output_values); }
 };
 
-template <typename level_t, int decode_threads, int max_output_values>
-using rle_stream_chunked = rle_stream<level_t, decode_threads, max_output_values, true>;
+template <typename level_t,
+          int decode_threads,
+          int max_output_values,
+          int max_chunk_runs      = max_runs_per_chunk,
+          bool allow_partial_runs = false>
+using rle_stream_chunked = rle_stream<level_t,
+                                      decode_threads,
+                                      max_output_values,
+                                      true,
+                                      8 * 1024,
+                                      max_chunk_runs,
+                                      allow_partial_runs>;
 
 }  // namespace cudf::io::parquet::detail

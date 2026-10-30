@@ -28,6 +28,17 @@ namespace {
 constexpr int preprocess_block_size   = 512;
 constexpr int level_decode_block_size = 128;
 
+// The default 1024-run table is tuned for Ampere and Hopper. On Ada, a smaller table reduces the
+// kernel's shared-memory and register footprint enough to increase residency from five to nine
+// blocks per SM. Runs beyond the table capacity continue in the decoder's existing outer loop.
+#if __CUDA_ARCH__ == 890
+constexpr int preprocess_level_min_blocks_per_sm = 10;
+constexpr int preprocess_max_runs_per_chunk      = 192;
+#else
+constexpr int preprocess_level_min_blocks_per_sm = 1;
+constexpr int preprocess_max_runs_per_chunk      = max_runs_per_chunk;
+#endif
+
 /**
  * @brief Computes the nz map for each page, one block per page.
  *
@@ -511,7 +522,7 @@ CUDF_KERNEL void __launch_bounds__(preprocess_block_size)
  */
 #pragma nv_diag_suppress static_var_with_dynamic_init
 template <typename level_t, int level_decode_block_size>
-CUDF_KERNEL void __launch_bounds__(level_decode_block_size)
+CUDF_KERNEL void __launch_bounds__(level_decode_block_size, preprocess_level_min_blocks_per_sm)
   preprocess_levels_kernel(PageInfo* pages,
                            device_span<ColumnChunkDesc const> chunks,
                            cudf::device_span<bool const> page_mask,
@@ -529,6 +540,14 @@ CUDF_KERNEL void __launch_bounds__(level_decode_block_size)
   // Return early if this page is pruned
   if (not page_mask.empty() and not page_mask[page_idx]) { return; }
 
+  // Each page is decoded by two blocks where blockIdx.y maps to def/rep level. Avoid constructing
+  // block-local page state for the repetition block when the column is flat.
+  int const stream_id = blockIdx.y;
+  if (stream_id == level_type::REPETITION &&
+      chunks[pp->chunk_idx].max_level[level_type::REPETITION] == 0) {
+    return;
+  }
+
   // setup page info - use all_types_filter since we need to preprocess levels for all page types
   if (!setup_local_page_info(
         s, pp, chunks, min_row, num_rows, all_types_filter{}, page_processing_stage::PREPROCESS)) {
@@ -538,14 +557,14 @@ CUDF_KERNEL void __launch_bounds__(level_decode_block_size)
   // whether or not we have repetition levels (lists)
   bool const has_repetition = chunks[pp->chunk_idx].max_level[level_type::REPETITION] > 0;
 
-  // Each page is decoded by two blocks where blockIdx.y maps to def/rep level
-  int const stream_id = blockIdx.y;
-
   // The chunked-expand rle_stream does not need a shared-memory ring buffer of
   // run headers; it parses runs directly into per-chunk tables, so we
   // default-construct the decoder here.
   static constexpr int max_output_values = cuda::std::numeric_limits<int>::max();
-  using decoder_stream_t = rle_stream_chunked<level_t, level_decode_block_size, max_output_values>;
+  using decoder_stream_t                 = rle_stream_chunked<level_t,
+                                                              level_decode_block_size,
+                                                              max_output_values,
+                                                              preprocess_max_runs_per_chunk>;
 
   // Shared-memory staging scratch for the encoded level streams. Level streams
   // for a page are usually small (definition/repetition levels are dominated by

@@ -170,11 +170,11 @@ void reader_impl::setup_next_pass(read_mode mode)
     // store off how much memory we've used so far. This includes the compressed page data and the
     // decompressed dictionary data. we will subtract this from the available total memory for the
     // subpasses
-    auto chunk_iter = cuda::transform_iterator(pass.chunks.d_begin(), get_chunk_compressed_size{});
-    pass.base_mem_size =
-      decomp_dict_data_size +
-      cudf::detail::reduce(
-        chunk_iter, chunk_iter + pass.chunks.size(), size_t{0}, cuda::std::plus<size_t>{}, _stream);
+    auto const compressed_data_size = std::accumulate(
+      pass.chunks.begin(), pass.chunks.end(), size_t{0}, [](size_t acc, auto const& chunk) {
+        return acc + chunk.compressed_size;
+      });
+    pass.base_mem_size = decomp_dict_data_size + compressed_data_size;
 
     // if we are doing subpass reading, generate more accurate num_row estimates for list columns.
     // this helps us to generate more accurate subpass splits.
@@ -350,8 +350,7 @@ void reader_impl::setup_next_subpass(read_mode mode)
 
   // Set the page mask information for the subpass
   set_subpass_page_mask();
-  CUDF_EXPECTS(_subpass_page_mask, "Subpass page mask is not set");
-  _subpass_page_mask->host_to_device_async(_stream);
+  if (_subpass_page_mask) { _subpass_page_mask->host_to_device_async(_stream); }
 
   // decompress the data pages in this subpass; also decompress the dictionary pages in this pass,
   // if this is the first subpass in the pass
@@ -627,15 +626,16 @@ void reader_impl::set_subpass_page_mask()
   auto const& pass    = _pass_itm_data;
   auto const& subpass = pass->subpass;
 
+  // An empty mask means all pages are selected. Avoid allocating and uploading an all-true mask
+  // for the common case where page pruning is not enabled.
+  if (_pass_page_mask.empty()) {
+    _subpass_page_mask.reset();
+    return;
+  }
+
   // Create a hostdevice vector to store the subpass page mask
   _subpass_page_mask = std::make_unique<cudf::detail::hostdevice_vector<bool>>(
     subpass->pages.size(), _stream, _mr.as_temporary());
-
-  // Fill with all true if no pass level page mask is available
-  if (_pass_page_mask.empty()) {
-    std::fill(_subpass_page_mask->begin(), _subpass_page_mask->end(), true);
-    return;
-  }
 
   // If this is the only subpass, move the pass level page mask data as is
   if (subpass->single_subpass) {

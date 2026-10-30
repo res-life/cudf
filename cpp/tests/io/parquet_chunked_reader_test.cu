@@ -258,6 +258,47 @@ TEST_F(ParquetChunkedReaderTest, TestChunkedReadSimpleData)
   }
 }
 
+TEST_F(ParquetChunkedReaderTest, CorruptFixedWidthOffsetIndexFallsBackToPageHeaders)
+{
+  auto constexpr num_rows = 40'000;
+  auto const value_iter   = cuda::counting_iterator<int32_t>{0};
+  auto const input        = int32s_col(value_iter, value_iter + num_rows);
+  auto const expected     = cudf::table_view{{input}};
+  auto const filepath     = temp_env->get_temp_filepath("corrupt_fixed_offset_index.parquet");
+
+  auto const write_options =
+    cudf::io::parquet_writer_options::builder(cudf::io::sink_info{filepath}, expected)
+      .stats_level(cudf::io::statistics_freq::STATISTICS_COLUMN)
+      .max_page_size_rows(1'000)
+      .build();
+  cudf::io::write_parquet(write_options);
+
+  auto sources        = cudf::io::make_datasources(cudf::io::source_info{filepath});
+  auto const metadata = cudf::io::read_parquet_footers(sources).front();
+  auto const& chunk   = metadata.row_groups.front().columns.front();
+  ASSERT_GT(chunk.offset_index_offset, 0);
+  ASSERT_GT(chunk.offset_index_length, 0);
+  EXPECT_FALSE(chunk.offset_index.has_value());
+
+  {
+    auto const [result, num_chunks] = chunked_read(filepath, 240'000);
+    EXPECT_GT(num_chunks, 0);
+    CUDF_TEST_EXPECT_TABLES_EQUAL(expected, result->view());
+  }
+
+  auto file = std::fstream{filepath, std::ios::in | std::ios::out | std::ios::binary};
+  ASSERT_TRUE(file.is_open());
+  file.seekp(chunk.offset_index_offset);
+  auto const corrupt_index = std::vector<char>(chunk.offset_index_length, '\xff');
+  file.write(corrupt_index.data(), corrupt_index.size());
+  ASSERT_TRUE(file.good());
+  file.close();
+
+  auto const [result, num_chunks] = chunked_read(filepath, 240'000);
+  EXPECT_GT(num_chunks, 0);
+  CUDF_TEST_EXPECT_TABLES_EQUAL(expected, result->view());
+}
+
 TEST_F(ParquetChunkedReaderTest, TestChunkedReadBoundaryCases)
 {
   // Tests some specific boundary conditions in the split calculations.
@@ -1308,6 +1349,48 @@ TEST_F(ParquetChunkedReaderInputLimitConstrainedTest, SingleFixedWidthColumn)
   // an unreasonable limit
   constexpr int expected_b[] = {1, 50, 50, 1};
   input_limit_test_read(test_filenames, tbl, 0, 1, expected_b, false);
+}
+
+TEST_F(ParquetChunkedReaderInputLimitConstrainedTest, DictionaryPartialRuns)
+{
+  constexpr cudf::size_type num_rows     = 4096;
+  constexpr cudf::size_type rows_to_skip = 137;
+  constexpr cudf::size_type rows_to_read = 3000;
+
+  auto const validity_values =
+    std::views::iota(cudf::size_type{0}) |
+    std::views::transform([](auto i) { return (i % 7 != 0) && (i % 11 != 3); });
+  auto const validity = validity_values.begin();
+
+  auto const repeated_values = cuda::make_constant_iterator(15);
+  cudf::test::fixed_width_column_wrapper<int32_t> repeated_col(
+    repeated_values, repeated_values + num_rows, validity);
+
+  auto const literal_values =
+    std::views::iota(cudf::size_type{0}) |
+    std::views::transform([](auto i) { return static_cast<int32_t>((i * 37) % 257); });
+  auto const literal_iter = literal_values.begin();
+  cudf::test::fixed_width_column_wrapper<int32_t> literal_col(
+    literal_iter, literal_iter + num_rows, validity);
+  auto const input = cudf::table_view{{repeated_col, literal_col}};
+
+  auto const filepath = temp_env->get_temp_filepath("dictionary_partial_runs.parquet");
+  auto const write_opts =
+    cudf::io::parquet_writer_options::builder(cudf::io::sink_info{filepath}, input)
+      .compression(cudf::io::compression_type::SNAPPY)
+      .dictionary_policy(cudf::io::dictionary_policy::ALWAYS)
+      .max_page_size_rows(num_rows)
+      .build();
+  cudf::io::write_parquet(write_opts);
+
+  auto const read_opts = cudf::io::parquet_reader_options::builder(cudf::io::source_info{filepath})
+                           .skip_rows(rows_to_skip)
+                           .num_rows(rows_to_read)
+                           .build();
+  auto const result   = chunked_read(read_opts, 8 * 1024).first;
+  auto const expected = cudf::slice(input, {rows_to_skip, rows_to_skip + rows_to_read});
+
+  CUDF_TEST_EXPECT_TABLES_EQUAL(expected.front(), *result);
 }
 
 TEST_F(ParquetChunkedReaderInputLimitConstrainedTest, MixedColumns)
