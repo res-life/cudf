@@ -293,7 +293,7 @@ inline __device__ void read_fixed_width_value_fast(auto* s, state_buf* sb, int s
     dict_pos = (s->stream.dict_bits > 0)
                  ? sb->dict_idx[rolling_index<state_buf::dict_buf_size>(src_pos)]
                  : 0;
-    dict = s->stream.dict_base;
+    dict     = s->stream.dict_base;
   } else {
     dict_pos = src_pos;
     dict     = s->stream.data_start;
