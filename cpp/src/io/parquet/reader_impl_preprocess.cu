@@ -32,6 +32,7 @@
 #include <thrust/transform.h>
 
 #include <algorithm>
+#include <functional>
 #include <limits>
 #include <numeric>
 #include <utility>
@@ -858,7 +859,12 @@ void reader_impl::preprocess_subpass_pages(read_mode mode, size_t chunk_read_lim
   auto& subpass = *pass.subpass;
 
   // figure out which kernels to run
-  subpass.kernel_mask = get_aggregated_decode_kernel_mask(subpass.pages, _stream);
+  subpass.kernel_mask = std::transform_reduce(
+    subpass.pages.host_begin(),
+    subpass.pages.host_end(),
+    uint32_t{0},
+    std::bit_or<>{},
+    [](PageInfo const& page) { return static_cast<uint32_t>(page.kernel_mask); });
 
   // Decode definition and repetition levels for all subpass pages
   // so they're available to compute_page_sizes and decode kernels.
