@@ -33,7 +33,7 @@ constexpr int level_decode_block_size = 128;
 // blocks per SM. Runs beyond the table capacity continue in the decoder's existing outer loop.
 #if __CUDA_ARCH__ == 890
 constexpr int preprocess_level_min_blocks_per_sm = 9;
-constexpr int preprocess_max_runs_per_chunk      = 64;
+constexpr int preprocess_max_runs_per_chunk      = 128;
 #else
 constexpr int preprocess_level_min_blocks_per_sm = 1;
 constexpr int preprocess_max_runs_per_chunk      = max_runs_per_chunk;
