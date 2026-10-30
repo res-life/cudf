@@ -191,8 +191,10 @@ __device__ void decode_fixed_width_values(auto* s, state_buf* const sb, int star
 
     void* const dst = data_out + (static_cast<size_t>(dst_pos) * dtype_len);
 
-    if (s->setup.col.logical_type.has_value() &&
-        s->setup.col.logical_type->type == LogicalType::DECIMAL) {
+    if (dtype == Type::INT32 && dtype_len == sizeof(uint32_t)) {
+      read_fixed_width_value_fast(s, sb, src_pos, static_cast<uint32_t*>(dst));
+    } else if (s->setup.col.logical_type.has_value() &&
+               s->setup.col.logical_type->type == LogicalType::DECIMAL) {
       switch (dtype) {
         case Type::INT32:
           read_fixed_width_value_fast(s, sb, src_pos, static_cast<uint32_t*>(dst));
