@@ -356,7 +356,7 @@ TYPED_TEST(PartitionMapRanksTest, TileBoundariesAndSkew)
 {
   using size_type = cudf::size_type;
   auto stream     = cuda::stream{cuda::device_ref{rmm::get_current_cuda_device().value()}};
-  for (auto const rows : {1023, 1024, 1025, 4099}) {
+  for (auto const rows : {1023, 1024, 1025, 2047, 2048, 2049, 4095, 4096, 4097, 4099}) {
     for (auto const partitions : {1, 2, 100, 200, 256, 257}) {
       if (static_cast<std::uint64_t>(partitions - 1) >
           static_cast<std::uint64_t>(std::numeric_limits<TypeParam>::max())) {

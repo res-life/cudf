@@ -445,6 +445,8 @@ void bench_partition_map(nvbench::state& state)
   std::unique_ptr<cudf::table> input;
   if (layout == "int8") {
     input = make_input_table(std::array{cudf::type_id::INT8}, {}, rows);
+  } else if (layout == "int8x2") {
+    input = make_input_table(std::array{cudf::type_id::INT8, cudf::type_id::INT8}, {}, rows);
   } else if (layout == "int16") {
     input = make_input_table(std::array{cudf::type_id::INT16}, {}, rows);
   } else if (layout == "int32") {
@@ -476,7 +478,8 @@ NVBENCH_BENCH(bench_partition_map)
   .add_int64_axis("num_partitions", {2, 100, 200, 256, 257})
   .add_int64_axis("hot_partition", {0, 1})
   .add_string_axis(
-    "layout", {"int8", "int16", "int32", "int64", "decimal128", "strings10", "mixed_nullable"});
+    "layout",
+    {"int8", "int8x2", "int16", "int32", "int64", "decimal128", "strings10", "mixed_nullable"});
 
 NVBENCH_BENCH_TYPES(bench_hash_partition_analytic,
                     NVBENCH_TYPE_AXES(nvbench::type_list<std::int32_t, std::int64_t>))
