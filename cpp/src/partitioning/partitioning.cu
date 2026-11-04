@@ -1127,10 +1127,10 @@ std::pair<std::unique_ptr<table>, std::vector<size_type>> partition_with_block_r
   cuda::stream_ref stream,
   rmm::device_async_resource_ref mr)
 {
-  // A single non-nullable fixed-width column can be scattered directly, avoiding the
+  // A single fixed-width column with no nulls can be scattered directly, avoiding the
   // gather map and the subsequent gather of its payload.
   if (input.num_columns() == 1 && is_fixed_width(input.column(0).type()) &&
-      !input.column(0).nullable()) {
+      (!input.column(0).nullable() || input.column(0).null_count() == 0)) {
     return type_dispatcher<dispatch_storage_type>(input.column(0).type(),
                                                   partition_single_column<MapType>{},
                                                   input.column(0),

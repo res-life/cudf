@@ -326,6 +326,40 @@ struct PartitionMapRanksTest : public cudf::test::BaseFixture {};
 
 TYPED_TEST_SUITE(PartitionMapRanksTest, cudf::test::IntegralTypesNotBool);
 
+TEST_F(PartitionTestNotTyped, SingleFixedWidthNullMask)
+{
+  constexpr cudf::size_type rows       = 1025;
+  constexpr cudf::size_type partitions = 100;
+  auto const ids = cudf::detail::make_counting_transform_iterator(0, [](auto i) { return i; });
+  auto const last_partition = cuda::make_constant_iterator<int32_t>(partitions - 1);
+  fixed_width_column_wrapper<int32_t> map(last_partition, last_partition + rows);
+  std::vector<cudf::size_type> expected_offsets(partitions + 1, 0);
+  expected_offsets.back() = rows;
+  auto stream             = cuda::stream{cuda::device_ref{rmm::get_current_cuda_device().value()}};
+
+  for (auto const null_mode : {0, 1, 2}) {
+    SCOPED_TRACE(null_mode);
+    // Cover an all-valid mask, nulls outside the slice, and one null inside the slice.
+    auto const valid = cudf::detail::make_counting_transform_iterator(0, [null_mode](auto i) {
+      return null_mode == 0 || (i >= 7 && i < rows + 7 && (null_mode != 2 || i != rows / 2 + 7));
+    });
+    fixed_width_column_wrapper<int64_t> data(ids, ids + rows + 14, valid);
+    auto const input = cudf::slice(cudf::column_view{data}, {7, rows + 7})[0];
+    ASSERT_TRUE(input.nullable());
+    ASSERT_EQ(input.null_count(), null_mode == 2 ? 1 : 0);
+
+    cudf::get_default_stream().sync();
+
+    auto [output, offsets] =
+      cudf::partition(cudf::table_view{{input}}, map, partitions, stream, mr());
+    EXPECT_EQ(offsets, expected_offsets);
+    EXPECT_EQ(output->get_column(0).nullable(), null_mode == 2);
+    auto sorted_input  = cudf::sort(cudf::table_view{{input}}, {}, {}, stream, mr());
+    auto sorted_output = cudf::sort(output->view(), {}, {}, stream, mr());
+    CUDF_TEST_EXPECT_TABLES_EQUIVALENT(sorted_input->view(), sorted_output->view(), stream);
+  }
+}
+
 TEST_F(PartitionTestNotTyped, SingleFixedWidthManyPartitions)
 {
   constexpr cudf::size_type rows = 4099;
