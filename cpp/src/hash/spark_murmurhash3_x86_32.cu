@@ -23,6 +23,8 @@
 #include <rmm/resource_ref.hpp>
 
 #include <cub/device/device_for.cuh>
+#include <cuda/std/bit>
+#include <cuda/std/functional>
 #include <cuda/stream_ref>
 
 #include <cstdint>
@@ -63,12 +65,12 @@ void check_spark_murmurhash3_compatibility(table_view const& input)
   }
 }
 
-}  // namespace
-
-std::unique_ptr<column> spark_murmurhash3_x86_32(table_view const& input,
-                                                 uint32_t seed,
-                                                 cuda::stream_ref stream,
-                                                 rmm::device_async_resource_ref mr)
+template <typename OutputTransform>
+std::unique_ptr<column> spark_murmurhash3_x86_32_impl(table_view const& input,
+                                                      uint32_t seed,
+                                                      OutputTransform transform,
+                                                      cuda::stream_ref stream,
+                                                      rmm::device_async_resource_ref mr)
 {
   // The hasher works in unsigned; Spark reports a signed `Int`, so the output column is INT32.
   using output_type = int32_t;
@@ -95,12 +97,41 @@ std::unique_ptr<column> spark_murmurhash3_x86_32(table_view const& input,
         nullable, seed);
   CUDF_CUDA_TRY(cub::DeviceFor::Bulk(
     input.num_rows(),
-    [output_begin, hasher] __device__(size_type i) mutable {
-      output_begin[i] = static_cast<output_type>(hasher(i));
+    [output_begin, hasher, transform] __device__(size_type i) mutable {
+      output_begin[i] = transform(cuda::std::bit_cast<output_type>(hasher(i)));
     },
     stream.get()));
 
   return output;
+}
+
+}  // namespace
+
+std::unique_ptr<column> spark_murmurhash3_x86_32(table_view const& input,
+                                                 uint32_t seed,
+                                                 cuda::stream_ref stream,
+                                                 rmm::device_async_resource_ref mr)
+{
+  return spark_murmurhash3_x86_32_impl(input, seed, cuda::std::identity{}, stream, mr);
+}
+
+std::unique_ptr<column> spark_murmurhash3_x86_32_pmod(table_view const& input,
+                                                      size_type num_partitions,
+                                                      uint32_t seed,
+                                                      cuda::stream_ref stream,
+                                                      rmm::device_async_resource_ref mr)
+{
+  CUDF_EXPECTS(num_partitions > 0, "Number of partitions must be positive");
+  return spark_murmurhash3_x86_32_impl(
+    input,
+    seed,
+    [num_partitions] __device__(int32_t hash) {
+      auto const remainder = hash % num_partitions;
+      // Add only to negative remainders. Unconditionally adding num_partitions can overflow.
+      return remainder < 0 ? remainder + num_partitions : remainder;
+    },
+    stream,
+    mr);
 }
 
 }  // namespace detail
@@ -112,6 +143,16 @@ std::unique_ptr<column> spark_murmurhash3_x86_32(table_view const& input,
 {
   CUDF_FUNC_RANGE();
   return detail::spark_murmurhash3_x86_32(input, seed, stream, mr);
+}
+
+std::unique_ptr<column> spark_murmurhash3_x86_32_pmod(table_view const& input,
+                                                      size_type num_partitions,
+                                                      uint32_t seed,
+                                                      cuda::stream_ref stream,
+                                                      rmm::device_async_resource_ref mr)
+{
+  CUDF_FUNC_RANGE();
+  return detail::spark_murmurhash3_x86_32_pmod(input, num_partitions, seed, stream, mr);
 }
 
 }  // namespace hashing
