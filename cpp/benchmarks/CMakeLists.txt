@@ -254,7 +254,7 @@ ConfigureNVBench(
 
 # ##################################################################################################
 # * hashing benchmark -----------------------------------------------------------------------------
-ConfigureNVBench(HASHING_NVBENCH hashing/hash.cpp hashing/partition.cpp)
+ConfigureNVBench(HASHING_NVBENCH hashing/hash.cpp hashing/hash_pmod.cpp hashing/partition.cpp)
 
 # ##################################################################################################
 # * hybrid scan filters benchmark

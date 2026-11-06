@@ -200,6 +200,7 @@ ConfigureTest(
   hashing/murmurhash3_x86_32_test.cpp
   hashing/murmurhash3_x64_128_test.cpp
   hashing/spark_murmurhash3_x86_32_test.cpp
+  hashing/spark_hash_pmod_test.cpp
   hashing/sha1_test.cpp
   hashing/sha224_test.cpp
   hashing/sha256_test.cpp
