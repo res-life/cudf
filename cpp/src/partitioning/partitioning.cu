@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "partition_strings.cuh"
+
 #include <cudf/column/column_factories.hpp>
 #include <cudf/copying.hpp>
 #include <cudf/detail/gather.cuh>
@@ -837,7 +839,9 @@ struct dispatch_map_type {
                       });
 
     // Scatter the rows into their partitions
-    auto scattered = detail::scatter(t, scatter_map, t, stream, mr);
+    auto scattered = detail::scatter_partition_strings(
+      t, {scatter_map.data(), scatter_map.size()}, num_partitions, stream, mr);
+    if (!scattered) { scattered = detail::scatter(t, scatter_map, t, stream, mr); }
 
     return std::pair{std::move(scattered), std::move(partition_offsets)};
   }
