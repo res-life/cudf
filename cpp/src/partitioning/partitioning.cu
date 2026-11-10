@@ -33,7 +33,11 @@
 #include <thrust/scan.h>
 #include <thrust/transform.h>
 
+#include <optional>
 #include <stdexcept>
+
+// Private partition-map implementation.
+#include "partition_rank_scatter.cuh"
 
 namespace cudf {
 namespace {
@@ -758,7 +762,8 @@ struct dispatch_map_type {
   /**
    * @brief Partitions the table `t` according to the `partition_map`.
    *
-   * Algorithm:
+   * Eligible inputs use tile-local ranks and a partition-major scan to construct the scatter map.
+   * Fallback algorithm:
    * - Compute the histogram of the size each partition
    * - Compute the exclusive scan of the histogram to get the offset for each
    * partition in the final partitioned output
@@ -783,58 +788,72 @@ struct dispatch_map_type {
     rmm::device_async_resource_ref mr) const
     requires(is_index_type<MapType>())
   {
-    // Build a histogram of the number of rows in each partition
-    rmm::device_uvector<size_type> histogram(num_partitions + 1, stream);
-    std::size_t temp_storage_bytes{};
-    std::size_t const num_levels = num_partitions + 1;
-    size_type const lower_level  = 0;
-    size_type const upper_level  = num_partitions;
-    cub::DeviceHistogram::HistogramEven(nullptr,
-                                        temp_storage_bytes,
-                                        partition_map.begin<MapType>(),
-                                        histogram.data(),
-                                        num_levels,
-                                        lower_level,
-                                        upper_level,
-                                        partition_map.size(),
-                                        stream.get());
+    // Keep the fallback's allocation order and live temporaries through materialization.
+    std::optional<rmm::device_uvector<size_type>> histogram_storage;
+    std::optional<cuda::device_buffer<std::byte>> temporary_storage;
+    std::optional<rmm::device_uvector<size_type>> scatter_map_storage;
+    std::vector<size_type> partition_offsets;
+    if (detail::partition_rank_scatter::use_rank_scatter(t, num_partitions)) {
+      auto& scatter_map = scatter_map_storage.emplace(partition_map.size(), stream);
+      partition_offsets = detail::partition_rank_scatter::run(partition_map.begin<MapType>(),
+                                                              partition_map.size(),
+                                                              num_partitions,
+                                                              scatter_map.data(),
+                                                              stream);
+    } else {
+      // Build a histogram of the number of rows in each partition
+      auto& histogram = histogram_storage.emplace(num_partitions + 1, stream);
+      std::size_t temp_storage_bytes{};
+      std::size_t const num_levels = num_partitions + 1;
+      size_type const lower_level  = 0;
+      size_type const upper_level  = num_partitions;
+      cub::DeviceHistogram::HistogramEven(nullptr,
+                                          temp_storage_bytes,
+                                          partition_map.begin<MapType>(),
+                                          histogram.data(),
+                                          num_levels,
+                                          lower_level,
+                                          upper_level,
+                                          partition_map.size(),
+                                          stream.get());
 
-    cuda::device_buffer<std::byte> temp_storage(
-      stream, cudf::get_current_device_resource_ref(), temp_storage_bytes, cuda::no_init);
+      auto& temp_storage = temporary_storage.emplace(
+        stream, cudf::get_current_device_resource_ref(), temp_storage_bytes, cuda::no_init);
 
-    cub::DeviceHistogram::HistogramEven(temp_storage.data(),
-                                        temp_storage_bytes,
-                                        partition_map.begin<MapType>(),
-                                        histogram.data(),
-                                        num_levels,
-                                        lower_level,
-                                        upper_level,
-                                        partition_map.size(),
-                                        stream.get());
+      cub::DeviceHistogram::HistogramEven(temp_storage.data(),
+                                          temp_storage_bytes,
+                                          partition_map.begin<MapType>(),
+                                          histogram.data(),
+                                          num_levels,
+                                          lower_level,
+                                          upper_level,
+                                          partition_map.size(),
+                                          stream.get());
 
-    // `histogram` was created with an extra entry at the end such that an
-    // exclusive scan will put the total number of rows at the end
-    thrust::exclusive_scan(rmm::exec_policy_nosync(stream, cudf::get_current_device_resource_ref()),
-                           histogram.begin(),
-                           histogram.end(),
-                           histogram.begin());
+      // `histogram` was created with an extra entry at the end such that an
+      // exclusive scan will put the total number of rows at the end
+      thrust::exclusive_scan(
+        rmm::exec_policy_nosync(stream, cudf::get_current_device_resource_ref()),
+        histogram.begin(),
+        histogram.end(),
+        histogram.begin());
 
-    // Copy offsets to host before the transform below modifies the histogram
-    auto const partition_offsets = cudf::detail::make_std_vector(histogram, stream);
+      // Copy offsets to host before the transform below modifies the histogram
+      partition_offsets = cudf::detail::make_std_vector(histogram, stream);
+      auto& scatter_map = scatter_map_storage.emplace(partition_map.size(), stream);
 
-    // Unfortunately need to materialize the scatter map because
-    // `detail::scatter` requires multiple passes through the iterator
-    rmm::device_uvector<size_type> scatter_map(partition_map.size(), stream);
+      // For each `partition_map[i]`, atomically increment the corresponding
+      // partition offset to determine `i`s location in the output
+      thrust::transform(rmm::exec_policy_nosync(stream, cudf::get_current_device_resource_ref()),
+                        partition_map.begin<MapType>(),
+                        partition_map.end<MapType>(),
+                        scatter_map.begin(),
+                        [offsets = histogram.data()] __device__(auto partition_number) {
+                          return atomicAdd(&offsets[partition_number], 1);
+                        });
+    }
 
-    // For each `partition_map[i]`, atomically increment the corresponding
-    // partition offset to determine `i`s location in the output
-    thrust::transform(rmm::exec_policy_nosync(stream, cudf::get_current_device_resource_ref()),
-                      partition_map.begin<MapType>(),
-                      partition_map.end<MapType>(),
-                      scatter_map.begin(),
-                      [offsets = histogram.data()] __device__(auto partition_number) {
-                        return atomicAdd(&offsets[partition_number], 1);
-                      });
+    auto& scatter_map = *scatter_map_storage;
 
     // Scatter the rows into their partitions
     auto scattered = detail::scatter(t, scatter_map, t, stream, mr);
