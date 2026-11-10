@@ -339,6 +339,71 @@ TEST_F(PartitionTestNotTyped, ListOfListOfListOfIntEmpty)
   EXPECT_EQ(3, result.second.size());
 }
 
+template <typename MapType>
+class RankScatterMapTypes : public cudf::test::BaseFixture {};
+TYPED_TEST_SUITE(RankScatterMapTypes, cudf::test::IntegralTypesNotBool);
+
+TYPED_TEST(RankScatterMapTypes, OptimizedMapTypes)
+{
+  constexpr int rows = 1'000'003;
+  std::vector<TypeParam> bins(rows);
+  std::vector<int32_t> ids(rows), expected;
+  std::vector<cudf::size_type> offsets{0};
+  for (int i = 0; i < rows; ++i) {
+    ids[i]  = i;
+    bins[i] = i % 3;
+  }
+  for (int p = 0; p < 3; ++p) {
+    for (int i = p; i < rows; i += 3)
+      expected.push_back(i);
+    offsets.push_back(expected.size());
+  }
+  fixed_width_column_wrapper<int32_t> input(ids.begin(), ids.end());
+  fixed_width_column_wrapper<TypeParam> map(bins.begin(), bins.end());
+  fixed_width_column_wrapper<int32_t> output(expected.begin(), expected.end());
+  run_partition_test(cudf::table_view{{input}}, map, 3, cudf::table_view{{output}}, offsets);
+}
+
+TEST_F(PartitionTestNotTyped, RankScatterBoundariesAndSkew)
+{
+  for (auto const rows : {999'999, 1'000'000, 1'000'003}) {
+    for (auto const partitions : {2, 16, 256, 257}) {
+      for (auto const pattern : {0, 1, 2}) {
+        SCOPED_TRACE(::testing::Message() << rows << "/" << partitions << "/" << pattern);
+        std::vector<int64_t> bins(rows + 7);
+        std::vector<int32_t> ids(rows + 7), expected_ids;
+        std::vector<bool> valid(rows + 7), expected_valid;
+        std::vector<cudf::size_type> offsets{0};
+        for (int i = 0; i < rows + 7; ++i) {
+          ids[i]   = i;
+          valid[i] = i % 11 != 0;
+          bins[i] =
+            pattern == 1 || (pattern == 2 && i % 10) ? partitions - 1 : (i * 17) % partitions;
+        }
+        std::vector<std::vector<int32_t>> grouped_ids(partitions);
+        std::vector<std::vector<bool>> grouped_valid(partitions);
+        for (int i = 7; i < rows + 7; ++i) {
+          grouped_ids[bins[i]].push_back(ids[i]);
+          grouped_valid[bins[i]].push_back(valid[i]);
+        }
+        for (int p = 0; p < partitions; ++p) {
+          expected_ids.insert(expected_ids.end(), grouped_ids[p].begin(), grouped_ids[p].end());
+          expected_valid.insert(
+            expected_valid.end(), grouped_valid[p].begin(), grouped_valid[p].end());
+          offsets.push_back(expected_ids.size());
+        }
+        fixed_width_column_wrapper<int32_t> id(ids.begin(), ids.end(), valid.begin());
+        fixed_width_column_wrapper<int64_t> map(bins.begin(), bins.end());
+        fixed_width_column_wrapper<int32_t> expected(
+          expected_ids.begin(), expected_ids.end(), expected_valid.begin());
+        auto input      = cudf::slice(cudf::table_view{{id}}, {7, rows + 7})[0];
+        auto sliced_map = cudf::slice(cudf::column_view{map}, {7, rows + 7})[0];
+        run_partition_test(input, sliced_map, partitions, cudf::table_view{{expected}}, offsets);
+      }
+    }
+  }
+}
+
 TEST_F(PartitionTestNotTyped, NoIntegerOverflow)
 {
   auto elements = cudf::detail::make_counting_transform_iterator(0, [](auto i) { return i % 2; });
