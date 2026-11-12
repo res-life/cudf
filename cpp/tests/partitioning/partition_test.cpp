@@ -655,3 +655,30 @@ TYPED_TEST(GenericPartitionMapTypes, NullableStringPartialTiles)
   run_partition_test(
     cudf::table_view{{input, input}}, map, 3, cudf::table_view{{output, output}}, offsets);
 }
+
+template <typename T>
+class SingleFixedRankMapTypes : public cudf::test::BaseFixture {};
+TYPED_TEST_SUITE(SingleFixedRankMapTypes, cudf::test::IntegralTypesNotBool);
+TYPED_TEST(SingleFixedRankMapTypes, PartialTiles)
+{
+  constexpr int rows = 2049;
+  std::vector<int32_t> values(rows), expected;
+  std::vector<TypeParam> bins(rows);
+  for (int i = 0; i < rows; ++i)
+    values[i] = i;
+  fixed_width_column_wrapper<int32_t> input(values.begin(), values.end());
+  for (auto const parts : {3, 127}) {
+    expected.clear();
+    std::vector<cudf::size_type> offsets{0};
+    for (int i = 0; i < rows; ++i)
+      bins[i] = i % parts;
+    for (int part = 0; part < parts; ++part) {
+      for (int i = part; i < rows; i += parts)
+        expected.push_back(i);
+      offsets.push_back(expected.size());
+    }
+    fixed_width_column_wrapper<int32_t> output(expected.begin(), expected.end());
+    fixed_width_column_wrapper<TypeParam> map(bins.begin(), bins.end());
+    run_partition_test(cudf::table_view{{input}}, map, parts, cudf::table_view{{output}}, offsets);
+  }
+}
