@@ -1,0 +1,3086 @@
+{
+  "-3": {
+    "stage": -3,
+    "pr": null,
+    "parent": "identity-null-only",
+    "child": "identity-null-only",
+    "fixtures": "fixtures-aa-empty.tsv",
+    "cases": 2,
+    "bench": "empty",
+    "blocks": 6,
+    "records": [
+      {
+        "id": "empty-first-n1025-p2-c10-z0-s0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.161313,
+          0.162714,
+          0.161443,
+          0.161043,
+          0.164413,
+          0.161863
+        ],
+        "child_run_ms": [
+          0.161593,
+          0.161922,
+          0.160934,
+          0.163133,
+          0.160973,
+          0.164373
+        ],
+        "paired_geomean_speedup": 0.9998609138934799,
+        "median_speedup": 0.9993539712223544,
+        "speedup_95ci": [
+          0.9859815374914366,
+          1.0139356662554013
+        ],
+        "within_2percent_bound": true,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "empty-first-n1025-p2-c4-z0-s7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.106232,
+          0.108662,
+          0.135603,
+          0.107242,
+          0.107782,
+          0.106962
+        ],
+        "child_run_ms": [
+          0.106831,
+          0.107442,
+          0.108392,
+          0.106342,
+          0.105702,
+          0.106892
+        ],
+        "paired_geomean_speedup": 1.0439752307082277,
+        "median_speedup": 1.0060873186320611,
+        "speedup_95ci": [
+          0.9508030717846967,
+          1.1462776201243643
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      }
+    ]
+  },
+  "-2": {
+    "stage": -2,
+    "pr": null,
+    "parent": "s03",
+    "child": "s03",
+    "fixtures": "fixtures-aa-s03.tsv",
+    "cases": 1,
+    "blocks": 6,
+    "records": [
+      {
+        "id": "ctrl-strings-1000000-256-4-8-32-90-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          1.720774,
+          1.738114,
+          1.736015,
+          1.739315,
+          1.744686,
+          1.749256
+        ],
+        "child_run_ms": [
+          1.745294,
+          1.726874,
+          1.744935,
+          1.749205,
+          1.835908,
+          1.741646
+        ],
+        "paired_geomean_speedup": 0.9892151089043898,
+        "median_speedup": 0.9963326188625445,
+        "speedup_95ci": [
+          0.967617696678793,
+          1.0112945795053587
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      }
+    ]
+  },
+  "-1": {
+    "stage": -1,
+    "pr": null,
+    "parent": "s02",
+    "child": "s02",
+    "fixtures": "fixtures-aa-s02.tsv",
+    "cases": 1,
+    "blocks": 6,
+    "records": [
+      {
+        "id": "ctrl-strings64-1025-2-4-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.49144,
+          0.50307,
+          0.505321,
+          0.505412,
+          0.512762,
+          0.49427
+        ],
+        "child_run_ms": [
+          0.514391,
+          0.51806,
+          0.49842,
+          0.512012,
+          0.521422,
+          0.50592
+        ],
+        "paired_geomean_speedup": 0.981134649203582,
+        "median_speedup": 0.9824513373402064,
+        "speedup_95ci": [
+          0.9610084643629453,
+          1.0016823322216648
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      }
+    ]
+  },
+  "0": {
+    "stage": 0,
+    "pr": null,
+    "parent": "safe07",
+    "child": "safe07",
+    "fixtures": "fixtures-aa.tsv",
+    "cases": 3,
+    "blocks": 6,
+    "records": [
+      {
+        "id": "strings-1-17-4-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.109412,
+          0.108403,
+          0.106702,
+          0.107712,
+          0.107272,
+          0.108842
+        ],
+        "child_run_ms": [
+          0.108742,
+          0.108642,
+          0.110322,
+          0.106592,
+          0.107322,
+          0.109082
+        ],
+        "paired_geomean_speedup": 0.9963999352467173,
+        "median_speedup": 0.9941624038567695,
+        "speedup_95ci": [
+          0.9803824079459023,
+          1.012679157554249
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-17-4-8-32-100-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.068651,
+          0.069561,
+          0.107072,
+          0.068131,
+          0.068702,
+          0.065981
+        ],
+        "child_run_ms": [
+          0.068001,
+          0.067402,
+          0.067882,
+          0.066012,
+          0.065831,
+          0.067771
+        ],
+        "paired_geomean_speedup": 1.0949567061827963,
+        "median_speedup": 1.0161274810798016,
+        "speedup_95ci": [
+          0.9059602346380682,
+          1.3233805884357075
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-2-1-4-32-0-0-2-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.046251,
+          0.045101,
+          0.046351,
+          0.045281,
+          0.045421,
+          0.044871
+        ],
+        "child_run_ms": [
+          0.046341,
+          0.046221,
+          0.046011,
+          0.044861,
+          0.045401,
+          0.045321
+        ],
+        "paired_geomean_speedup": 0.9967833278429662,
+        "median_speedup": 0.9922329672253097,
+        "speedup_95ci": [
+          0.9837679900654052,
+          1.009970859693901
+        ],
+        "within_2percent_bound": true,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      }
+    ]
+  },
+  "1": {
+    "stage": 1,
+    "pr": 9,
+    "parent": "baseline",
+    "child": "s01",
+    "fixtures": "fixtures-s01.tsv",
+    "cases": 1,
+    "blocks": 6,
+    "records": [
+      {
+        "id": "fixed-n1025-p17-c4-l32-z0-d0-s0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.073731,
+          0.078072,
+          0.077452,
+          0.079051,
+          0.075732,
+          0.077031
+        ],
+        "child_run_ms": [
+          0.077262,
+          0.079502,
+          0.133763,
+          0.075902,
+          0.076062,
+          0.076652
+        ],
+        "paired_geomean_speedup": 0.9093568111403781,
+        "median_speedup": 1.003696869680471,
+        "speedup_95ci": [
+          0.7195978973351239,
+          1.1491554005782316
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      }
+    ]
+  },
+  "2": {
+    "stage": 2,
+    "pr": 10,
+    "parent": "s01",
+    "child": "s02",
+    "fixtures": "fixtures-s02.tsv",
+    "cases": 3,
+    "blocks": 6,
+    "records": [
+      {
+        "id": "ctrl-strings-1025-257-4-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.515501,
+          0.694824,
+          0.505441,
+          0.51013,
+          0.5064,
+          0.50506
+        ],
+        "child_run_ms": [
+          0.519431,
+          0.670664,
+          0.698335,
+          0.50879,
+          0.503221,
+          0.498591
+        ],
+        "paired_geomean_speedup": 0.9554155746182614,
+        "median_speedup": 0.9886298762620099,
+        "speedup_95ci": [
+          0.8276424553508274,
+          1.1029145669384615
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "ctrl-strings-1000000-2-1-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          1.106663,
+          1.170085,
+          1.103344,
+          1.154074,
+          1.101153,
+          1.102773
+        ],
+        "child_run_ms": [
+          1.105134,
+          1.104303,
+          1.145155,
+          1.105444,
+          1.138645,
+          1.101033
+        ],
+        "paired_geomean_speedup": 1.0055485618542903,
+        "median_speedup": 0.999741696515572,
+        "speedup_95ci": [
+          0.9654222406223704,
+          1.0473426731866011
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "ctrl-strings64-1025-2-4-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.511451,
+          0.49724,
+          0.530431,
+          0.504081,
+          0.494631,
+          0.519791
+        ],
+        "child_run_ms": [
+          0.513261,
+          0.518431,
+          0.513801,
+          0.498611,
+          0.536571,
+          0.490261
+        ],
+        "paired_geomean_speedup": 0.9957755802398539,
+        "median_speedup": 0.9887738033341706,
+        "speedup_95ci": [
+          0.9442239413672091,
+          1.0501417754418028
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      }
+    ]
+  },
+  "3": {
+    "stage": 3,
+    "pr": 11,
+    "parent": "s02",
+    "child": "s03",
+    "fixtures": "fixtures-s03.tsv",
+    "cases": 5,
+    "blocks": 6,
+    "records": [
+      {
+        "id": "strings-n1000000-p2-c2-w8-l32-z0-m0-d0-s0",
+        "blocks": 6,
+        "parent_run_ms": [
+          1.608384,
+          1.606964,
+          1.604903,
+          1.612294,
+          1.616474,
+          1.611734
+        ],
+        "child_run_ms": [
+          1.617834,
+          1.599693,
+          1.613473,
+          1.606244,
+          1.616784,
+          1.618364
+        ],
+        "paired_geomean_speedup": 0.9988029792188028,
+        "median_speedup": 0.9968612404523851,
+        "speedup_95ci": [
+          0.9939952978110514,
+          1.0036339140569972
+        ],
+        "within_2percent_bound": true,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-n1000003-p2-c2-w8-l8-z0-m0-d3-s7",
+        "blocks": 6,
+        "parent_run_ms": [
+          1.368009,
+          1.362158,
+          1.373509,
+          1.383749,
+          1.38879,
+          1.371409
+        ],
+        "child_run_ms": [
+          1.376119,
+          1.502082,
+          1.383219,
+          1.364989,
+          1.375539,
+          1.371939
+        ],
+        "paired_geomean_speedup": 0.9854590165626402,
+        "median_speedup": 0.9975505676940958,
+        "speedup_95ci": [
+          0.9433939809291774,
+          1.029399691916744
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-n1000003-p2-c2-w8-l9-z0-m0-d0-s7",
+        "blocks": 6,
+        "parent_run_ms": [
+          1.304878,
+          1.305737,
+          1.359858,
+          1.321618,
+          1.312787,
+          1.307847
+        ],
+        "child_run_ms": [
+          1.300127,
+          1.358369,
+          1.300568,
+          1.299707,
+          1.435281,
+          1.317948
+        ],
+        "paired_geomean_speedup": 0.9881582710454834,
+        "median_speedup": 1.0008088550919683,
+        "speedup_95ci": [
+          0.9406724792403612,
+          1.0380411781836494
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "ctrl-strings-1025-256-3-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.111333,
+          0.113742,
+          0.112742,
+          0.117933,
+          0.117313,
+          0.115883
+        ],
+        "child_run_ms": [
+          0.117972,
+          0.119373,
+          0.116703,
+          0.117192,
+          0.122503,
+          0.120813
+        ],
+        "paired_geomean_speedup": 0.9640903052887925,
+        "median_speedup": 0.9674735090269438,
+        "speedup_95ci": [
+          0.9416943447446511,
+          0.9870189004945882
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": true,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "ctrl-strings-1000000-256-4-8-32-90-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          1.739377,
+          1.794527,
+          1.825918,
+          1.742636,
+          1.743407,
+          2.022912
+        ],
+        "child_run_ms": [
+          1.722046,
+          1.730307,
+          1.729177,
+          1.928201,
+          1.743476,
+          1.743297
+        ],
+        "paired_geomean_speedup": 1.0250461152038757,
+        "median_speedup": 1.0185196700602601,
+        "speedup_95ci": [
+          0.9411550853985811,
+          1.116414876353322
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      }
+    ]
+  },
+  "4": {
+    "stage": 4,
+    "pr": 12,
+    "parent": "s03",
+    "child": "safe04",
+    "fixtures": "fixtures-s04.tsv",
+    "cases": 5,
+    "blocks": 6,
+    "records": [
+      {
+        "id": "strings-1-17-4-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.155374,
+          0.132213,
+          0.106042,
+          0.110552,
+          0.107892,
+          0.112382
+        ],
+        "child_run_ms": [
+          0.107622,
+          0.107392,
+          0.110733,
+          0.107392,
+          0.108392,
+          0.107342
+        ],
+        "paired_geomean_speedup": 1.1055600930321658,
+        "median_speedup": 1.0368348107565089,
+        "speedup_95ci": [
+          0.9380665125357812,
+          1.302959974555823
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1025-1-4-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.098773,
+          0.109583,
+          0.098162,
+          0.109633,
+          0.103772,
+          0.105802
+        ],
+        "child_run_ms": [
+          0.105622,
+          0.105822,
+          0.108362,
+          0.105843,
+          0.099372,
+          0.105353
+        ],
+        "paired_geomean_speedup": 0.9919960848381039,
+        "median_speedup": 0.9911560507746732,
+        "speedup_95ci": [
+          0.9310722184469948,
+          1.0569064491855507
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1000000-1-4-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.764616,
+          0.763966,
+          0.761016,
+          0.824317,
+          0.763166,
+          0.762756
+        ],
+        "child_run_ms": [
+          0.763806,
+          0.824867,
+          0.761646,
+          0.767016,
+          0.766926,
+          0.766236
+        ],
+        "paired_geomean_speedup": 0.997688387976886,
+        "median_speedup": 0.9960669518289652,
+        "speedup_95ci": [
+          0.9495738604419822,
+          1.0482408593688686
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "lists-1000003-256-4-8-32-10-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          2.606565,
+          2.584854,
+          2.685316,
+          2.636054,
+          2.605173,
+          2.613854
+        ],
+        "child_run_ms": [
+          2.621065,
+          2.582904,
+          2.582104,
+          2.593474,
+          2.598844,
+          2.637435
+        ],
+        "paired_geomean_speedup": 1.0073833118079776,
+        "median_speedup": 1.0054120337005552,
+        "speedup_95ci": [
+          0.9886766180133586,
+          1.0264439538869492
+        ],
+        "within_2percent_bound": true,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-256-2-4-32-10-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.45562,
+          0.511371,
+          0.45737,
+          0.45989,
+          0.458619,
+          0.46193
+        ],
+        "child_run_ms": [
+          0.456689,
+          0.45752,
+          0.45586,
+          0.459549,
+          0.45653,
+          0.455959
+        ],
+        "paired_geomean_speedup": 1.0219977614373597,
+        "median_speedup": 1.0057926959469745,
+        "speedup_95ci": [
+          0.9757136134869556,
+          1.0704774535739712
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      }
+    ]
+  },
+  "5": {
+    "stage": 5,
+    "pr": 13,
+    "parent": "safe04",
+    "child": "priority05-fixed",
+    "fixtures": "fixtures-s05.tsv",
+    "cases": 1,
+    "blocks": 6,
+    "records": [
+      {
+        "id": "strings-1024-2-2-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.098562,
+          0.100512,
+          0.103492,
+          0.099482,
+          0.103622,
+          0.101803
+        ],
+        "child_run_ms": [
+          0.156373,
+          0.101842,
+          0.099082,
+          0.104332,
+          0.102913,
+          0.103252
+        ],
+        "paired_geomean_speedup": 0.922189684821054,
+        "median_speedup": 0.9813256372323141,
+        "speedup_95ci": [
+          0.7564026222852164,
+          1.124313678634607
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      }
+    ]
+  },
+  "6": {
+    "stage": 6,
+    "pr": 14,
+    "parent": "priority05-fixed",
+    "child": "priority06-reordered",
+    "fixtures": "fixtures-s06.tsv",
+    "cases": 11,
+    "blocks": 6,
+    "records": [
+      {
+        "id": "strings-1023-2-2-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.268906,
+          0.276316,
+          0.264086,
+          0.267456,
+          0.365158,
+          0.260805
+        ],
+        "child_run_ms": [
+          0.265326,
+          0.265005,
+          0.280466,
+          0.270636,
+          0.269926,
+          0.266866
+        ],
+        "paired_geomean_speedup": 1.044705526574251,
+        "median_speedup": 0.9991989448426952,
+        "speedup_95ci": [
+          0.9103173870457928,
+          1.198933089476276
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1024-2-2-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.102202,
+          0.100512,
+          0.104012,
+          0.104592,
+          0.167764,
+          0.102082
+        ],
+        "child_run_ms": [
+          0.099302,
+          0.102062,
+          0.098822,
+          0.103032,
+          0.101482,
+          0.102342
+        ],
+        "paired_geomean_speedup": 1.1014617030960216,
+        "median_speedup": 1.013117556891876,
+        "speedup_95ci": [
+          0.8926330339123201,
+          1.3591451775762515
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1025-2-2-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.099322,
+          0.103072,
+          0.104302,
+          0.104722,
+          0.099402,
+          0.101372
+        ],
+        "child_run_ms": [
+          0.100271,
+          0.102612,
+          0.099042,
+          0.103222,
+          0.101232,
+          0.146113
+        ],
+        "paired_geomean_speedup": 0.9476391677936862,
+        "median_speedup": 1.0029434273267794,
+        "speedup_95ci": [
+          0.8056290065456863,
+          1.1146818014748137
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1023-2-3-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.378358,
+          0.379778,
+          0.380308,
+          0.379338,
+          0.393638,
+          0.401578
+        ],
+        "child_run_ms": [
+          0.392268,
+          0.387358,
+          0.373118,
+          0.387119,
+          0.379198,
+          0.630993
+        ],
+        "paired_geomean_speedup": 0.9244089274293483,
+        "median_speedup": 0.9814184281779834,
+        "speedup_95ci": [
+          0.7613131407308055,
+          1.1224446543649431
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1024-2-3-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.110003,
+          0.112682,
+          0.109492,
+          0.113252,
+          0.180843,
+          0.112072
+        ],
+        "child_run_ms": [
+          0.110622,
+          0.112852,
+          0.108763,
+          0.115942,
+          0.112053,
+          0.112992
+        ],
+        "paired_geomean_speedup": 1.0772678748905187,
+        "median_speedup": 0.9993286054111736,
+        "speedup_95ci": [
+          0.8748644758965523,
+          1.3264981105580487
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1025-2-3-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.110083,
+          0.110302,
+          0.112873,
+          0.116432,
+          0.112643,
+          0.113402
+        ],
+        "child_run_ms": [
+          0.113013,
+          0.110603,
+          0.109412,
+          0.114032,
+          0.177374,
+          0.112573
+        ],
+        "paired_geomean_speedup": 0.9318155719179132,
+        "median_speedup": 0.9996896970556682,
+        "speedup_95ci": [
+          0.7642413784384872,
+          1.1361335365572522
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1000003-2-4-8-32-10-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          2.787708,
+          2.692036,
+          2.648945,
+          2.661745,
+          2.692248,
+          2.653626
+        ],
+        "child_run_ms": [
+          2.665765,
+          2.670955,
+          2.643376,
+          2.655847,
+          2.658037,
+          2.660516
+        ],
+        "paired_geomean_speedup": 1.0112475850006555,
+        "median_speedup": 1.006623606082331,
+        "speedup_95ci": [
+          0.9930808000166814,
+          1.0297467015297046
+        ],
+        "within_2percent_bound": true,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1000003-256-4-8-32-90-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          1.733586,
+          1.723705,
+          1.957581,
+          1.714956,
+          1.728457,
+          1.719736
+        ],
+        "child_run_ms": [
+          1.729996,
+          1.736446,
+          1.727036,
+          1.719687,
+          1.723557,
+          1.726396
+        ],
+        "paired_geomean_speedup": 1.0195605613616667,
+        "median_speedup": 0.9996322498893853,
+        "speedup_95ci": [
+          0.9653690137491655,
+          1.0767941828244907
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-2-2-4-32-10-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.858738,
+          0.857967,
+          0.856598,
+          0.861598,
+          0.859499,
+          0.860208
+        ],
+        "child_run_ms": [
+          0.861688,
+          0.913478,
+          0.859748,
+          0.861789,
+          0.861618,
+          0.863349
+        ],
+        "paired_geomean_speedup": 0.9873930685262835,
+        "median_speedup": 0.9969596345062917,
+        "speedup_95ci": [
+          0.9622922071764992,
+          1.0131486719968108
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1025-256-1-16-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.050401,
+          0.053291,
+          0.050261,
+          0.053211,
+          0.052032,
+          0.089933
+        ],
+        "child_run_ms": [
+          0.051021,
+          0.049901,
+          0.052071,
+          0.050331,
+          0.050201,
+          0.052641
+        ],
+        "paired_geomean_speedup": 1.1135203618079443,
+        "median_speedup": 1.0383909542978926,
+        "speedup_95ci": [
+          0.8901247751084487,
+          1.3929817828178392
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-16-1-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.113123,
+          0.082522,
+          0.080241,
+          0.083032,
+          0.080851,
+          0.097592
+        ],
+        "child_run_ms": [
+          0.103412,
+          0.080382,
+          0.081572,
+          0.080632,
+          0.081302,
+          0.082471
+        ],
+        "paired_geomean_speedup": 1.049816887075217,
+        "median_speedup": 1.0164544371722923,
+        "speedup_95ci": [
+          0.9760838165788338,
+          1.1291197309788468
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      }
+    ]
+  },
+  "7": {
+    "stage": 7,
+    "pr": 15,
+    "parent": "priority06-reordered",
+    "child": "safe07",
+    "fixtures": "fixtures-s07.tsv",
+    "cases": 15,
+    "blocks": 6,
+    "records": [
+      {
+        "id": "strings-1-17-4-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.110232,
+          0.109173,
+          0.111342,
+          0.179814,
+          0.120163,
+          0.125953
+        ],
+        "child_run_ms": [
+          0.110923,
+          0.111553,
+          0.108813,
+          0.111753,
+          0.120633,
+          0.109042
+        ],
+        "paired_geomean_speedup": 1.1072108330523889,
+        "median_speedup": 1.0405841528973911,
+        "speedup_95ci": [
+          0.9043832127096658,
+          1.355526962022592
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1000000-17-4-8-32-100-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.079282,
+          0.078331,
+          0.078882,
+          0.077342,
+          0.079172,
+          0.078852
+        ],
+        "child_run_ms": [
+          0.130373,
+          0.078902,
+          0.078321,
+          0.079682,
+          0.136203,
+          0.079702
+        ],
+        "paired_geomean_speedup": 0.8351913399844291,
+        "median_speedup": 0.9896476434271946,
+        "speedup_95ci": [
+          0.633122580646592,
+          1.1017527974955523
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-17-4-8-32-100-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.068202,
+          0.095962,
+          0.067781,
+          0.085602,
+          0.067592,
+          0.067982
+        ],
+        "child_run_ms": [
+          0.109602,
+          0.067991,
+          0.076382,
+          0.068391,
+          0.066111,
+          0.068651
+        ],
+        "paired_geomean_speedup": 0.9979286845117079,
+        "median_speedup": 0.9937391456633733,
+        "speedup_95ci": [
+          0.7391425642571842,
+          1.3473201348809867
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1023-2-1-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.160973,
+          0.150384,
+          0.153833,
+          0.150893,
+          0.151054,
+          0.151423
+        ],
+        "child_run_ms": [
+          0.157573,
+          0.152354,
+          0.151133,
+          0.159193,
+          0.157213,
+          0.160504
+        ],
+        "paired_geomean_speedup": 0.9792660159402943,
+        "median_speedup": 0.9608972444772004,
+        "speedup_95ci": [
+          0.943841963467976,
+          1.0160195955391145
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1024-2-1-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.091222,
+          0.088391,
+          0.091232,
+          0.090292,
+          0.089271,
+          0.091212
+        ],
+        "child_run_ms": [
+          0.091732,
+          0.091152,
+          0.089942,
+          0.085552,
+          0.088962,
+          0.086511
+        ],
+        "paired_geomean_speedup": 1.0148109397714302,
+        "median_speedup": 1.0145329338639717,
+        "speedup_95ci": [
+          0.9797741551427378,
+          1.0511006419941151
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-2-1-4-32-0-0-2-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.046141,
+          0.045012,
+          0.045331,
+          0.04475,
+          0.050511,
+          0.04611
+        ],
+        "child_run_ms": [
+          0.04585,
+          0.045091,
+          0.045091,
+          0.045761,
+          0.053222,
+          0.045161
+        ],
+        "paired_geomean_speedup": 0.9927027768022303,
+        "median_speedup": 1.0057081894370998,
+        "speedup_95ci": [
+          0.9658450800758759,
+          1.0203073178086097
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-256-2-8-32-10-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.230554,
+          0.230395,
+          0.233175,
+          0.230265,
+          0.274846,
+          0.232485
+        ],
+        "child_run_ms": [
+          0.230025,
+          0.230775,
+          0.230515,
+          0.231175,
+          0.231584,
+          0.248846
+        ],
+        "paired_geomean_speedup": 1.0187465531909161,
+        "median_speedup": 1.002357397986795,
+        "speedup_95ci": [
+          0.9366435652222836,
+          1.1080464097269183
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-256-1-8-32-0-0-2-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.073011,
+          0.072762,
+          0.076672,
+          0.072411,
+          0.074092,
+          0.074182
+        ],
+        "child_run_ms": [
+          0.074752,
+          0.083162,
+          0.072821,
+          0.074042,
+          0.072531,
+          0.076411
+        ],
+        "paired_geomean_speedup": 0.9775530639574289,
+        "median_speedup": 0.9886352944339155,
+        "speedup_95ci": [
+          0.9150830677173263,
+          1.0442877008273417
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-256-1-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.113272,
+          0.140383,
+          0.117053,
+          0.114442,
+          0.117893,
+          0.113643
+        ],
+        "child_run_ms": [
+          0.117442,
+          0.115552,
+          0.115533,
+          0.115812,
+          0.113502,
+          0.116823
+        ],
+        "paired_geomean_speedup": 1.0287438052701081,
+        "median_speedup": 1.0005662073615602,
+        "speedup_95ci": [
+          0.940050116767399,
+          1.125805739507701
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-3-1-8-32-10-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.111642,
+          0.143413,
+          0.111952,
+          0.112262,
+          0.111393,
+          0.113673
+        ],
+        "child_run_ms": [
+          0.112272,
+          0.111123,
+          0.110573,
+          0.116662,
+          0.113123,
+          0.111342
+        ],
+        "paired_geomean_speedup": 1.0388560035419576,
+        "median_speedup": 1.0026831951487833,
+        "speedup_95ci": [
+          0.9271969668315538,
+          1.163961741358061
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-2-3-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.193844,
+          0.211194,
+          0.193694,
+          0.221755,
+          0.192394,
+          0.224885
+        ],
+        "child_run_ms": [
+          0.194394,
+          0.191945,
+          0.193454,
+          0.194674,
+          0.196704,
+          0.197674
+        ],
+        "paired_geomean_speedup": 1.0567232073151038,
+        "median_speedup": 1.0410468092981175,
+        "speedup_95ci": [
+          0.9811828188103616,
+          1.1380793828332858
+        ],
+        "within_2percent_bound": true,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-15-1-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.073681,
+          0.072851,
+          0.079722,
+          0.073192,
+          0.084012,
+          0.083432
+        ],
+        "child_run_ms": [
+          0.072992,
+          0.079492,
+          0.073082,
+          0.072441,
+          0.075042,
+          0.074071
+        ],
+        "paired_geomean_speedup": 1.042781797859596,
+        "median_speedup": 1.0424728004186121,
+        "speedup_95ci": [
+          0.9591109831144067,
+          1.1337518776151712
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-15-1-8-32-0-0-2-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.057121,
+          0.056411,
+          0.055671,
+          0.055281,
+          0.055342,
+          0.059781
+        ],
+        "child_run_ms": [
+          0.055632,
+          0.055371,
+          0.056412,
+          0.056251,
+          0.059372,
+          0.057331
+        ],
+        "paired_geomean_speedup": 0.9976627558401912,
+        "median_speedup": 0.9948430274358041,
+        "speedup_95ci": [
+          0.9561935888614879,
+          1.0409303994348642
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-256-2-4-32-10-0-2-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.917549,
+          0.915919,
+          0.916209,
+          0.916309,
+          0.913949,
+          0.94998
+        ],
+        "child_run_ms": [
+          0.910869,
+          0.914389,
+          0.918739,
+          0.917559,
+          0.913749,
+          0.91835
+        ],
+        "paired_geomean_speedup": 1.0065109611450813,
+        "median_speedup": 1.000311144202783,
+        "speedup_95ci": [
+          0.9919810926878204,
+          1.0212536532931784
+        ],
+        "within_2percent_bound": true,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-2-3-8-32-0-0-2-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.192714,
+          0.191824,
+          0.223244,
+          0.191484,
+          0.191154,
+          0.218154
+        ],
+        "child_run_ms": [
+          0.190675,
+          0.196684,
+          0.190664,
+          0.191634,
+          0.190424,
+          0.194074
+        ],
+        "paired_geomean_speedup": 1.0448733735932516,
+        "median_speedup": 1.005830362350873,
+        "speedup_95ci": [
+          0.9662706010683328,
+          1.1298702098946871
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      }
+    ]
+  },
+  "8": {
+    "stage": 8,
+    "pr": 16,
+    "parent": "safe07",
+    "child": "safe08",
+    "fixtures": "fixtures-s08.tsv",
+    "cases": 9,
+    "blocks": 6,
+    "records": [
+      {
+        "id": "strings-1024-2-2-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.098772,
+          0.103072,
+          0.120383,
+          0.099522,
+          0.102382,
+          0.102582
+        ],
+        "child_run_ms": [
+          0.101212,
+          0.110322,
+          0.103482,
+          0.134943,
+          0.099122,
+          0.101102
+        ],
+        "paired_geomean_speedup": 0.9674289468934446,
+        "median_speedup": 1.001319042082328,
+        "speedup_95ci": [
+          0.8247872866395249,
+          1.1347395655195212
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1025-2-2-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.108782,
+          0.103152,
+          0.108983,
+          0.106802,
+          0.108073,
+          0.101843
+        ],
+        "child_run_ms": [
+          0.107382,
+          0.126282,
+          0.111412,
+          0.108812,
+          0.099211,
+          0.110283
+        ],
+        "paired_geomean_speedup": 0.9633376207164308,
+        "median_speedup": 0.9807389488578013,
+        "speedup_95ci": [
+          0.8699209080876209,
+          1.0667859145122665
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1023-2-3-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.394799,
+          0.392858,
+          0.390278,
+          0.377768,
+          0.384958,
+          0.380658
+        ],
+        "child_run_ms": [
+          0.392548,
+          0.385458,
+          0.386198,
+          0.379777,
+          0.374327,
+          0.382668
+        ],
+        "paired_geomean_speedup": 1.0088181724195586,
+        "median_speedup": 1.0092562938892837,
+        "speedup_95ci": [
+          0.9948493825131938,
+          1.0229830996456806
+        ],
+        "within_2percent_bound": true,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1025-2-3-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.114153,
+          0.110303,
+          0.112112,
+          0.106862,
+          0.116333,
+          0.108713
+        ],
+        "child_run_ms": [
+          0.108572,
+          0.181544,
+          0.111012,
+          0.116852,
+          0.109193,
+          0.173294
+        ],
+        "paired_geomean_speedup": 0.8563311064255922,
+        "median_speedup": 0.9760866130674437,
+        "speedup_95ci": [
+          0.6523515998851723,
+          1.1240916155661391
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-2-2-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.081122,
+          0.081182,
+          0.080101,
+          0.085661,
+          0.081171,
+          0.081642
+        ],
+        "child_run_ms": [
+          0.106272,
+          0.098482,
+          0.081131,
+          0.082292,
+          0.082541,
+          0.081161
+        ],
+        "paired_geomean_speedup": 0.9282524872426424,
+        "median_speedup": 0.9849544690686937,
+        "speedup_95ci": [
+          0.8134693091495825,
+          1.0592319468978386
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-3-2-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.082522,
+          0.081881,
+          0.085342,
+          0.105422,
+          0.083782,
+          0.100552
+        ],
+        "child_run_ms": [
+          0.100892,
+          0.111633,
+          0.082761,
+          0.083802,
+          0.083892,
+          0.081692
+        ],
+        "paired_geomean_speedup": 0.9926431385994277,
+        "median_speedup": 1.0085274368790773,
+        "speedup_95ci": [
+          0.791427403753651,
+          1.2450167835169266
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1024-3-1-16-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.049891,
+          0.067852,
+          0.053691,
+          0.052251,
+          0.052661,
+          0.102772
+        ],
+        "child_run_ms": [
+          0.097662,
+          0.073142,
+          0.052621,
+          0.051851,
+          0.082811,
+          0.050441
+        ],
+        "paired_geomean_speedup": 0.9262127304899576,
+        "median_speedup": 0.8456541272075252,
+        "speedup_95ci": [
+          0.5619241383205814,
+          1.5266651912935663
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1025-256-1-16-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.050811,
+          0.049991,
+          0.054552,
+          0.052841,
+          0.052231,
+          0.050501
+        ],
+        "child_run_ms": [
+          0.082801,
+          0.077542,
+          0.051141,
+          0.053531,
+          0.05471,
+          0.051131
+        ],
+        "paired_geomean_speedup": 0.855776269587791,
+        "median_speedup": 0.9519682929758594,
+        "speedup_95ci": [
+          0.6639757048815341,
+          1.1029816576199294
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-15-1-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.073872,
+          0.072332,
+          0.095402,
+          0.073122,
+          0.072431,
+          0.072321
+        ],
+        "child_run_ms": [
+          0.085722,
+          0.088282,
+          0.073202,
+          0.072722,
+          0.071832,
+          0.073041
+        ],
+        "paired_geomean_speedup": 0.9868727286345621,
+        "median_speedup": 0.9952818254548934,
+        "speedup_95ci": [
+          0.832596439797731,
+          1.16973570384138
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      }
+    ]
+  },
+  "9": {
+    "stage": 9,
+    "pr": 17,
+    "parent": "safe08",
+    "child": "safe09",
+    "fixtures": "fixtures-s09.tsv",
+    "cases": 9,
+    "blocks": 6,
+    "records": [
+      {
+        "id": "strings-1025-2-1-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.091573,
+          0.110542,
+          0.089622,
+          0.093942,
+          0.091122,
+          0.091622
+        ],
+        "child_run_ms": [
+          0.089682,
+          0.090922,
+          0.090582,
+          0.090752,
+          0.125732,
+          0.091042
+        ],
+        "paired_geomean_speedup": 0.9875036341694868,
+        "median_speedup": 1.0083721391063112,
+        "speedup_95ci": [
+          0.8270645066033417,
+          1.179065743617541
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1025-2-2-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.142363,
+          0.106693,
+          0.102912,
+          0.109742,
+          0.101912,
+          0.099102
+        ],
+        "child_run_ms": [
+          0.100752,
+          0.108962,
+          0.107952,
+          0.108822,
+          0.109313,
+          0.107912
+        ],
+        "paired_geomean_speedup": 1.0219045502892525,
+        "median_speedup": 0.9669286907101403,
+        "speedup_95ci": [
+          0.861861563919621,
+          1.2116666453398914
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1025-2-3-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.194824,
+          0.170714,
+          0.113562,
+          0.121452,
+          0.166214,
+          0.172963
+        ],
+        "child_run_ms": [
+          0.111943,
+          0.112573,
+          0.111982,
+          0.119952,
+          0.115832,
+          0.112393
+        ],
+        "paired_geomean_speedup": 1.3474186857755703,
+        "median_speedup": 1.4976840944853889,
+        "speedup_95ci": [
+          1.0589063694278995,
+          1.714539799924005
+        ],
+        "within_2percent_bound": true,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1000003-256-4-8-32-90-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.858588,
+          0.847189,
+          0.857758,
+          0.857617,
+          0.851337,
+          0.850297
+        ],
+        "child_run_ms": [
+          0.855198,
+          0.854539,
+          0.854281,
+          0.862408,
+          0.865118,
+          0.869288
+        ],
+        "paired_geomean_speedup": 0.9926375941386995,
+        "median_speedup": 0.9949627563015033,
+        "speedup_95ci": [
+          0.9817120655514979,
+          1.0036847135457536
+        ],
+        "within_2percent_bound": true,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-2-1-16-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.063772,
+          0.063451,
+          0.087292,
+          0.063571,
+          0.063661,
+          0.063631
+        ],
+        "child_run_ms": [
+          0.065661,
+          0.063681,
+          0.097232,
+          0.065281,
+          0.086082,
+          0.063601
+        ],
+        "paired_geomean_speedup": 0.924894976201886,
+        "median_speedup": 0.9721250630049945,
+        "speedup_95ci": [
+          0.8185854128355274,
+          1.0450109464329813
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-3-2-8-32-0-0-2-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.082072,
+          0.081031,
+          0.080601,
+          0.081132,
+          0.081102,
+          0.081562
+        ],
+        "child_run_ms": [
+          0.082622,
+          0.082111,
+          0.081972,
+          0.081242,
+          0.080721,
+          0.082062
+        ],
+        "paired_geomean_speedup": 0.9934310750482811,
+        "median_speedup": 0.9890266652035552,
+        "speedup_95ci": [
+          0.9853186428363222,
+          1.00161029941613
+        ],
+        "within_2percent_bound": true,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-2-4-8-32-0-0-2-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.349138,
+          0.345597,
+          0.354607,
+          0.348288,
+          0.348697,
+          0.348258
+        ],
+        "child_run_ms": [
+          0.350808,
+          0.355827,
+          0.347479,
+          0.346948,
+          0.348558,
+          0.346777
+        ],
+        "paired_geomean_speedup": 0.999146693440448,
+        "median_speedup": 1.0013619965605276,
+        "speedup_95ci": [
+          0.982284203451519,
+          1.0162986552213775
+        ],
+        "within_2percent_bound": true,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-256-4-8-32-10-0-2-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.459379,
+          0.45605,
+          0.45898,
+          0.457509,
+          0.45904,
+          0.45787
+        ],
+        "child_run_ms": [
+          0.45855,
+          0.46512,
+          0.460941,
+          0.46409,
+          0.46001,
+          0.46174
+        ],
+        "paired_geomean_speedup": 0.9922039415850558,
+        "median_speedup": 0.9936803727398743,
+        "speedup_95ci": [
+          0.983894688905094,
+          1.0005833681168312
+        ],
+        "within_2percent_bound": true,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-16-1-8-32-0-0-2-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.086742,
+          0.063601,
+          0.066401,
+          0.063961,
+          0.064041,
+          0.063591
+        ],
+        "child_run_ms": [
+          0.064881,
+          0.065581,
+          0.093732,
+          0.064201,
+          0.066002,
+          0.065251
+        ],
+        "paired_geomean_speedup": 0.9761755242580736,
+        "median_speedup": 0.9783692063103828,
+        "speedup_95ci": [
+          0.7904247349908691,
+          1.2055779784922
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      }
+    ]
+  },
+  "10": {
+    "stage": 10,
+    "pr": 18,
+    "parent": "safe09",
+    "child": "identity-null-only",
+    "fixtures": "fixtures-s10.tsv",
+    "cases": 35,
+    "blocks": 6,
+    "records": [
+      {
+        "id": "strings-1000000-2-2-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.568082,
+          0.562942,
+          0.567711,
+          0.560872,
+          0.566362,
+          0.567851
+        ],
+        "child_run_ms": [
+          0.568092,
+          0.563542,
+          0.574252,
+          0.561611,
+          0.567681,
+          0.568932
+        ],
+        "paired_geomean_speedup": 0.9969906245114702,
+        "median_speedup": 0.9985032220346847,
+        "speedup_95ci": [
+          0.9925945321007553,
+          1.0014061867337332
+        ],
+        "within_2percent_bound": true,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1023-2-1-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.156053,
+          0.151034,
+          0.156614,
+          0.158583,
+          0.160703,
+          0.225874
+        ],
+        "child_run_ms": [
+          0.163773,
+          0.152093,
+          0.235345,
+          0.153883,
+          0.214435,
+          0.156123
+        ],
+        "paired_geomean_speedup": 0.9430884561105983,
+        "median_speedup": 0.9853108510265837,
+        "speedup_95ci": [
+          0.7093480121986362,
+          1.2538497616879372
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1025-2-1-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.089531,
+          0.086981,
+          0.083201,
+          0.084442,
+          0.089471,
+          0.086782
+        ],
+        "child_run_ms": [
+          0.089282,
+          0.086922,
+          0.086492,
+          0.087491,
+          0.088702,
+          0.113882
+        ],
+        "paired_geomean_speedup": 0.945865168163628,
+        "median_speedup": 0.9862083056648108,
+        "speedup_95ci": [
+          0.8446655777243263,
+          1.0591895064027328
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1023-2-2-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.277036,
+          0.268196,
+          0.277356,
+          0.375148,
+          0.295406,
+          0.275905
+        ],
+        "child_run_ms": [
+          0.299636,
+          0.259365,
+          0.393588,
+          0.267326,
+          0.270835,
+          0.298886
+        ],
+        "paired_geomean_speedup": 0.9918244337628552,
+        "median_speedup": 0.9730938476903609,
+        "speedup_95ci": [
+          0.7813793484335848,
+          1.258947666560478
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1024-2-2-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.100742,
+          0.097372,
+          0.100202,
+          0.154913,
+          0.100492,
+          0.111923
+        ],
+        "child_run_ms": [
+          0.102672,
+          0.096692,
+          0.103032,
+          0.106342,
+          0.099562,
+          0.143463
+        ],
+        "paired_geomean_speedup": 1.016368315104406,
+        "median_speedup": 0.9782697468206744,
+        "speedup_95ci": [
+          0.8226879212144761,
+          1.2556457014990783
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1025-2-2-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.100932,
+          0.097402,
+          0.100642,
+          0.099782,
+          0.100492,
+          0.123142
+        ],
+        "child_run_ms": [
+          0.096902,
+          0.097022,
+          0.103082,
+          0.100122,
+          0.100162,
+          0.096482
+        ],
+        "paired_geomean_speedup": 1.0450816396992018,
+        "median_speedup": 1.0202390131071704,
+        "speedup_95ci": [
+          0.9408187282417342,
+          1.160899119937314
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1023-2-3-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.379418,
+          0.548902,
+          0.383048,
+          0.390748,
+          0.392569,
+          0.400579
+        ],
+        "child_run_ms": [
+          0.509041,
+          0.369728,
+          0.53096,
+          0.375028,
+          0.402838,
+          0.385017
+        ],
+        "paired_geomean_speedup": 0.9719993869399225,
+        "median_speedup": 0.9942400568632553,
+        "speedup_95ci": [
+          0.7368339776226634,
+          1.2822193830689679
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings_tail-1000003-2-4-8-512-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.692324,
+          0.746746,
+          0.691934,
+          0.693155,
+          0.690315,
+          0.693204
+        ],
+        "child_run_ms": [
+          0.737486,
+          0.692855,
+          0.695234,
+          0.691164,
+          0.698475,
+          0.694384
+        ],
+        "paired_geomean_speedup": 0.999396472970145,
+        "median_speedup": 0.9970214836019684,
+        "speedup_95ci": [
+          0.9540783745835425,
+          1.0468671513712293
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-2-1-8-32-0-0-2-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.056321,
+          0.056101,
+          0.056431,
+          0.056421,
+          0.055011,
+          0.055211
+        ],
+        "child_run_ms": [
+          0.057402,
+          0.056531,
+          0.056841,
+          0.055392,
+          0.072441,
+          0.075641
+        ],
+        "paired_geomean_speedup": 0.903999968358125,
+        "median_speedup": 0.9840602925343346,
+        "speedup_95ci": [
+          0.7711973554947875,
+          1.0596716093083316
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-2-2-8-32-0-0-2-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.075631,
+          0.074821,
+          0.094951,
+          0.078812,
+          0.078512,
+          0.080192
+        ],
+        "child_run_ms": [
+          0.074571,
+          0.075402,
+          0.075872,
+          0.074942,
+          0.078502,
+          0.073472
+        ],
+        "paired_geomean_speedup": 1.0633755819743327,
+        "median_speedup": 1.0464268610652903,
+        "speedup_95ci": [
+          0.9702587502655433,
+          1.1654289415372745
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-3-1-8-32-10-0-2-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.103822,
+          0.104162,
+          0.112832,
+          0.106242,
+          0.101591,
+          0.102542
+        ],
+        "child_run_ms": [
+          0.103493,
+          0.103522,
+          0.102522,
+          0.103882,
+          0.102632,
+          0.140053
+        ],
+        "paired_geomean_speedup": 0.9681322162548891,
+        "median_speedup": 1.004680820230418,
+        "speedup_95ci": [
+          0.8341300970186211,
+          1.1236616344388777
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-999999-2-1-16-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.054831,
+          0.054192,
+          0.053961,
+          0.053462,
+          0.053331,
+          0.053381
+        ],
+        "child_run_ms": [
+          0.069391,
+          0.053411,
+          0.053401,
+          0.053521,
+          0.054021,
+          0.053362
+        ],
+        "paired_geomean_speedup": 0.9633301017326991,
+        "median_speedup": 1.0045917031384433,
+        "speedup_95ci": [
+          0.8695838279820911,
+          1.0671827776027183
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-256-2-4-32-10-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.279186,
+          0.241795,
+          0.241894,
+          0.238305,
+          0.245255,
+          0.237394
+        ],
+        "child_run_ms": [
+          0.243965,
+          0.237275,
+          0.239585,
+          0.243185,
+          0.242985,
+          0.238335
+        ],
+        "paired_geomean_speedup": 1.0250394999495185,
+        "median_speedup": 1.0023188345732226,
+        "speedup_95ci": [
+          0.966895644070185,
+          1.0866798117258767
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1000003-256-4-8-32-90-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.865168,
+          0.867209,
+          0.863195,
+          0.842549,
+          0.862218,
+          0.861597
+        ],
+        "child_run_ms": [
+          0.857887,
+          0.845028,
+          0.862407,
+          0.840827,
+          0.879618,
+          0.866977
+        ],
+        "paired_geomean_speedup": 1.001854445836824,
+        "median_speedup": 1.0029756541614399,
+        "speedup_95ci": [
+          0.9859302627666434,
+          1.0180358272262253
+        ],
+        "within_2percent_bound": true,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "identity-9",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.144793,
+          0.142584,
+          0.184183,
+          0.138123,
+          0.142663,
+          0.187644
+        ],
+        "child_run_ms": [
+          0.145333,
+          0.141323,
+          0.145043,
+          0.222245,
+          0.143613,
+          0.160404
+        ],
+        "paired_geomean_speedup": 0.9865312694250806,
+        "median_speedup": 0.9899440725128801,
+        "speedup_95ci": [
+          0.7606238993604141,
+          1.2795337437751202
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "identity-10",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.079901,
+          0.079991,
+          0.076791,
+          0.081492,
+          0.080342,
+          0.099182
+        ],
+        "child_run_ms": [
+          0.081952,
+          0.081201,
+          0.081172,
+          0.103443,
+          0.099422,
+          0.077132
+        ],
+        "paired_geomean_speedup": 0.9518637637474762,
+        "median_speedup": 0.9827156105005731,
+        "speedup_95ci": [
+          0.7913215024739779,
+          1.14497662694981
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "identity-extra-11",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.034801,
+          0.03255,
+          0.03229,
+          0.032191,
+          0.0326,
+          0.032991
+        ],
+        "child_run_ms": [
+          0.033551,
+          0.032841,
+          0.033801,
+          0.032471,
+          0.034521,
+          0.033091
+        ],
+        "paired_geomean_speedup": 0.9856052297089467,
+        "median_speedup": 0.9776117163350438,
+        "speedup_95ci": [
+          0.9515562902609268,
+          1.0208725209133478
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "identity-extra-12",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.618452,
+          0.620233,
+          0.620722,
+          0.619233,
+          0.619433,
+          0.622422
+        ],
+        "child_run_ms": [
+          0.621043,
+          0.621873,
+          0.618512,
+          0.619112,
+          0.636013,
+          0.623752
+        ],
+        "paired_geomean_speedup": 0.9947458072008994,
+        "median_speedup": 0.9973851812994603,
+        "speedup_95ci": [
+          0.9836314376946387,
+          1.005985761560173
+        ],
+        "within_2percent_bound": true,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "identity-extra-13",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.058931,
+          0.058601,
+          0.058451,
+          0.059292,
+          0.058891,
+          0.058731
+        ],
+        "child_run_ms": [
+          0.082952,
+          0.051951,
+          0.053751,
+          0.052731,
+          0.053461,
+          0.067821
+        ],
+        "paired_geomean_speedup": 0.9888105739881636,
+        "median_speedup": 1.0970973398500168,
+        "speedup_95ci": [
+          0.8095944354272803,
+          1.2076989520250045
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "identity-extra-15",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.077121,
+          0.046741,
+          0.046611,
+          0.046471,
+          0.046771,
+          0.062571
+        ],
+        "child_run_ms": [
+          0.048521,
+          0.062951,
+          0.048551,
+          0.046961,
+          0.047451,
+          0.061981
+        ],
+        "paired_geomean_speedup": 1.0184033836442794,
+        "median_speedup": 0.9633261908686337,
+        "speedup_95ci": [
+          0.7863647772933291,
+          1.318911377729781
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1-17-4-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.064262,
+          0.037331,
+          0.037491,
+          0.037041,
+          0.03753,
+          0.050161
+        ],
+        "child_run_ms": [
+          0.038671,
+          0.03751,
+          0.039471,
+          0.037461,
+          0.037171,
+          0.037041
+        ],
+        "paired_geomean_speedup": 1.1337489680929596,
+        "median_speedup": 1.000666924544157,
+        "speedup_95ci": [
+          0.8931524917592885,
+          1.4391570694943234
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1025-1-4-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.098742,
+          0.098651,
+          0.100342,
+          0.098642,
+          0.099922,
+          0.106703
+        ],
+        "child_run_ms": [
+          0.072232,
+          0.072272,
+          0.074001,
+          0.071141,
+          0.070091,
+          0.072942
+        ],
+        "paired_geomean_speedup": 1.3933111049212832,
+        "median_speedup": 1.3747993135138126,
+        "speedup_95ci": [
+          1.3503889969057195,
+          1.437597491941431
+        ],
+        "within_2percent_bound": true,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-17-4-8-32-100-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.068541,
+          0.066792,
+          0.066802,
+          0.068721,
+          0.068052,
+          0.068761
+        ],
+        "child_run_ms": [
+          0.068572,
+          0.067652,
+          0.069011,
+          0.068552,
+          0.066761,
+          0.069101
+        ],
+        "paired_geomean_speedup": 0.9951624275017751,
+        "median_speedup": 0.996127592543975,
+        "speedup_95ci": [
+          0.9773624683377427,
+          1.0132865637817756
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "strings-1024-2-1-8-32-0-0-0-7",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.081702,
+          0.083352,
+          0.080922,
+          0.130173,
+          0.085212,
+          0.108912
+        ],
+        "child_run_ms": [
+          0.086512,
+          0.086612,
+          0.083982,
+          0.086232,
+          0.103353,
+          0.083451
+        ],
+        "paired_geomean_speedup": 1.0604938812637175,
+        "median_speedup": 0.9758023433520121,
+        "speedup_95ci": [
+          0.8335420435355482,
+          1.349238806752308
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-2-2-4-32-10-0-2-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.125522,
+          0.124713,
+          0.120792,
+          0.125503,
+          0.124692,
+          0.138813
+        ],
+        "child_run_ms": [
+          0.121613,
+          0.121913,
+          0.125853,
+          0.122162,
+          0.143693,
+          0.158033
+        ],
+        "paired_geomean_speedup": 0.9621953282630521,
+        "median_speedup": 1.0088744632381106,
+        "speedup_95ci": [
+          0.8847577349759975,
+          1.0464105744793053
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-2-2-4-32-10-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.123253,
+          0.125512,
+          0.122263,
+          0.126042,
+          0.122842,
+          0.125083
+        ],
+        "child_run_ms": [
+          0.125884,
+          0.122873,
+          0.126603,
+          0.123412,
+          0.154294,
+          0.155883
+        ],
+        "paired_geomean_speedup": 0.9259275626559559,
+        "median_speedup": 0.9835595496005735,
+        "speedup_95ci": [
+          0.8196621058429477,
+          1.0459698516918763
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-256-2-8-32-10-0-2-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.200294,
+          0.179134,
+          0.176144,
+          0.175724,
+          0.174914,
+          0.178694
+        ],
+        "child_run_ms": [
+          0.177235,
+          0.175473,
+          0.175434,
+          0.175534,
+          0.203364,
+          0.209654
+        ],
+        "paired_geomean_speedup": 0.9732951689213584,
+        "median_speedup": 1.0058650278227395,
+        "speedup_95ci": [
+          0.8682067600726321,
+          1.0911035589798983
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-256-2-8-32-10-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.230825,
+          0.268195,
+          0.231156,
+          0.232075,
+          0.231685,
+          0.250855
+        ],
+        "child_run_ms": [
+          0.230947,
+          0.233405,
+          0.230925,
+          0.231405,
+          0.251195,
+          0.261825
+        ],
+        "paired_geomean_speedup": 1.0031131167565188,
+        "median_speedup": 0.9977410124567028,
+        "speedup_95ci": [
+          0.9278281777855127,
+          1.0845067536217792
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-256-1-8-32-0-0-2-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.073922,
+          0.073962,
+          0.075242,
+          0.074362,
+          0.073522,
+          0.074051
+        ],
+        "child_run_ms": [
+          0.072622,
+          0.073852,
+          0.099872,
+          0.117873,
+          0.121253,
+          0.090562
+        ],
+        "paired_geomean_speedup": 0.7884409211848996,
+        "median_speedup": 0.7772404087505383,
+        "speedup_95ci": [
+          0.6251193053159695,
+          0.9944327121439366
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": true,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-256-1-8-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.115712,
+          0.115603,
+          0.117502,
+          0.115272,
+          0.113783,
+          0.115362
+        ],
+        "child_run_ms": [
+          0.113543,
+          0.115362,
+          0.159463,
+          0.113802,
+          0.131673,
+          0.116353
+        ],
+        "paired_geomean_speedup": 0.931447206152275,
+        "median_speedup": 0.996763265218048,
+        "speedup_95ci": [
+          0.8123748029837569,
+          1.067972436690932
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-3-1-8-32-10-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.110872,
+          0.112352,
+          0.135892,
+          0.111012,
+          0.111802,
+          0.112272
+        ],
+        "child_run_ms": [
+          0.112203,
+          0.147393,
+          0.111992,
+          0.109923,
+          0.131163,
+          0.133973
+        ],
+        "paired_geomean_speedup": 0.9329327430608638,
+        "median_speedup": 0.9207284501532671,
+        "speedup_95ci": [
+          0.7830705394639991,
+          1.1114752237656897
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-256-4-8-32-90-0-2-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.247605,
+          0.249605,
+          0.247275,
+          0.285126,
+          0.247235,
+          0.248925
+        ],
+        "child_run_ms": [
+          0.250496,
+          0.250545,
+          0.247176,
+          0.249805,
+          0.252425,
+          0.252956
+        ],
+        "paired_geomean_speedup": 1.0134978065381954,
+        "median_speedup": 0.9909967447773734,
+        "speedup_95ci": [
+          0.9529017461752675,
+          1.077947236407734
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1023-3-1-16-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.049621,
+          0.053161,
+          0.049791,
+          0.051771,
+          0.052081,
+          0.052741
+        ],
+        "child_run_ms": [
+          0.049641,
+          0.050211,
+          0.049471,
+          0.049341,
+          0.071571,
+          0.050021
+        ],
+        "paired_geomean_speedup": 0.9747039091854628,
+        "median_speedup": 1.0420421023057935,
+        "speedup_95ci": [
+          0.8368518993025661,
+          1.1352638517916904
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1025-256-1-16-32-0-0-0-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.040781,
+          0.04286,
+          0.041391,
+          0.042851,
+          0.041221,
+          0.042481
+        ],
+        "child_run_ms": [
+          0.061601,
+          0.043401,
+          0.041301,
+          0.043081,
+          0.04269,
+          0.047401
+        ],
+        "paired_geomean_speedup": 0.9089509449623088,
+        "median_speedup": 0.9698203094285516,
+        "speedup_95ci": [
+          0.7679956574807544,
+          1.0757766821989851
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      },
+      {
+        "id": "fixed-1000000-256-2-4-32-10-0-2-0",
+        "blocks": 6,
+        "parent_run_ms": [
+          0.153713,
+          0.150603,
+          0.155184,
+          0.152003,
+          0.155153,
+          0.152503
+        ],
+        "child_run_ms": [
+          0.169413,
+          0.152433,
+          0.149873,
+          0.153074,
+          0.153134,
+          0.196494
+        ],
+        "paired_geomean_speedup": 0.9477673299800995,
+        "median_speedup": 1.0000261260319783,
+        "speedup_95ci": [
+          0.8464554097931775,
+          1.0612052346585956
+        ],
+        "within_2percent_bound": false,
+        "confirmed_slowdown": false,
+        "confirmed_over_2percent_regression": false
+      }
+    ]
+  }
+}

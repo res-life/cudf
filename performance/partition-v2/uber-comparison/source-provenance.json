@@ -1,0 +1,17 @@
+{
+  "baseline": "65b9b3c222ee7d6ba8f0f442688bd64268709e93",
+  "uber": "c285951eeddfae0a34379d82f0c40dbbd264e695",
+  "stack": "74fe237ab462746119e0e9bb82e5f152ac31d3d5",
+  "uber_source_hashes": {
+    "partition_string_plan.cuh": "f0ecab18c0fd1f45b7bd6df93d767c21cb7383812fc7d38386004f5377ebaba3",
+    "partition_string_copy.cuh": "48bb19f49b19aa0e369f42492df24495df5ea53ee243107b0fd63abb77b40d97",
+    "partitioning.cu": "a1b4e185f917d9e92676d40dcff627f3538bff58f25c7abb98e324d27f5a6526",
+    "partition_map_plan.cuh": "3d8933892608c7fa24997ae60c6adb751e8c379116ab7a2ee836c0fc23d5faa6",
+    "partition_fixed_width.cuh": "4a2e656fdc548968fa5b258a06cb4db506054f0cf5b779743416d095d1e09283",
+    "partition_identity.cuh": "7afd413d9aa279dab8728db6e8501849d2f7695bee3a79d083cd3236049b090e",
+    "round_robin.cu": "4280d97174359bbcb0f09aad3af6ea52835ec3880010e46670a45d5eaedb75d6",
+    "partition_strings.cuh": "67fc65d6b233c690a80ae7661d7fa069373519f04cb7ef2fcc845172d3592dab"
+  },
+  "historical_source_and_library_hashes_verified": true,
+  "acceptance": "Gate end-to-end baseline vs exact Uber/final stack; small incremental split regressions acceptable if final result improves or remains flat."
+}

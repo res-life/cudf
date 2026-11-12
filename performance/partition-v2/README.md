@@ -37,3 +37,11 @@ The harness prints the loaded library path and verifies partition boundaries, ro
 ## Scope and deliberate guards
 
 Core GPU kernels are extracted from the pinned source. STRING allocation rejection reuses the existing gather permutation, and configured lower output-offset thresholds retain the preceding small-schema path. Identity batching is restricted to multiple non-null STRING columns; standard copies are retained for other schemas. These guards address measured regressions in the original fallback flows. Reports disclose timing noise and repeated controls; they do not claim universal zero regression on unmeasured hardware or distributions.
+
+## End-to-end baseline acceptance
+
+[Baseline versus exact Uber and the final guarded stack: historical 348-case evidence, fresh 210-case three-way comparison, multi-column STRING gains, and confirmed STRUCT exception](uber-comparison/README.md). Small incremental split differences are informational when the completed series improves the same fixture versus baseline. Licensed native harnesses are provided with byte-exact compilation inputs in matching .txt files; source-input-map.json records both hashes.
+
+## Regression follow-up
+
+[Controlled per-PR checks, rejected/final #18 empty-column measurements, A/A calibration, and exact source manifests](regression-check/README.md). Final #18 retains valid empty STRING columns in partially uniform tables after measured route-downgrade regressions. All-null omission and identity batching remain enabled. Historical original #18 data remains archived; use the guarded-prefix results in its current report.

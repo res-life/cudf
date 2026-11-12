@@ -1,0 +1,4227 @@
+{
+  "historical_cases": 348,
+  "unique_current_cases": 315,
+  "new_parameter_cases": 191,
+  "fresh_screen_cases": 210,
+  "cases": [
+    {
+      "id": "strings-1-17-4-8-32-0-0-0-0",
+      "fields": [
+        "strings",
+        "1",
+        "17",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv",
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1-17-4-8-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1",
+        "17",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv",
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1025-1-4-8-32-0-0-0-0",
+      "fields": [
+        "strings",
+        "1025",
+        "1",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv",
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1025-1-4-8-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1025",
+        "1",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv",
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1000000-1-4-8-32-0-0-0-0",
+      "fields": [
+        "strings",
+        "1000000",
+        "1",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv",
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-1-4-8-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "1",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv",
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1000000-17-4-8-32-100-0-0-0",
+      "fields": [
+        "strings",
+        "1000000",
+        "17",
+        "4",
+        "8",
+        "32",
+        "100",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv",
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-17-4-8-32-100-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "17",
+        "4",
+        "8",
+        "32",
+        "100",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv",
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1000000-2-10-8-32-0-0-0-0",
+      "fields": [
+        "strings",
+        "1000000",
+        "2",
+        "10",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": true
+    },
+    {
+      "id": "strings-1000000-2-10-8-128-0-0-2-0",
+      "fields": [
+        "strings",
+        "1000000",
+        "2",
+        "10",
+        "8",
+        "128",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1000000-256-10-8-32-0-0-0-0",
+      "fields": [
+        "strings",
+        "1000000",
+        "256",
+        "10",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": true
+    },
+    {
+      "id": "strings-1000000-256-10-8-128-0-0-2-0",
+      "fields": [
+        "strings",
+        "1000000",
+        "256",
+        "10",
+        "8",
+        "128",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1023-2-1-8-32-0-0-0-7",
+      "fields": [
+        "strings",
+        "1023",
+        "2",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1024-2-1-8-32-0-0-0-7",
+      "fields": [
+        "strings",
+        "1024",
+        "2",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1025-2-1-8-32-0-0-0-7",
+      "fields": [
+        "strings",
+        "1025",
+        "2",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-3999999-2-1-8-32-0-0-0-7",
+      "fields": [
+        "strings",
+        "3999999",
+        "2",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-4000000-2-1-8-32-0-0-0-7",
+      "fields": [
+        "strings",
+        "4000000",
+        "2",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-4000001-2-1-8-32-0-0-0-7",
+      "fields": [
+        "strings",
+        "4000001",
+        "2",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1023-2-2-8-32-0-0-0-7",
+      "fields": [
+        "strings",
+        "1023",
+        "2",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1024-2-2-8-32-0-0-0-7",
+      "fields": [
+        "strings",
+        "1024",
+        "2",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1025-2-2-8-32-0-0-0-7",
+      "fields": [
+        "strings",
+        "1025",
+        "2",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-3999999-2-2-8-32-0-0-0-7",
+      "fields": [
+        "strings",
+        "3999999",
+        "2",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-4000000-2-2-8-32-0-0-0-7",
+      "fields": [
+        "strings",
+        "4000000",
+        "2",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-4000001-2-2-8-32-0-0-0-7",
+      "fields": [
+        "strings",
+        "4000001",
+        "2",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1023-2-3-8-32-0-0-0-7",
+      "fields": [
+        "strings",
+        "1023",
+        "2",
+        "3",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1024-2-3-8-32-0-0-0-7",
+      "fields": [
+        "strings",
+        "1024",
+        "2",
+        "3",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1025-2-3-8-32-0-0-0-7",
+      "fields": [
+        "strings",
+        "1025",
+        "2",
+        "3",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-3999999-2-3-8-32-0-0-0-7",
+      "fields": [
+        "strings",
+        "3999999",
+        "2",
+        "3",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-4000000-2-3-8-32-0-0-0-7",
+      "fields": [
+        "strings",
+        "4000000",
+        "2",
+        "3",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-4000001-2-3-8-32-0-0-0-7",
+      "fields": [
+        "strings",
+        "4000001",
+        "2",
+        "3",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1000003-2-4-8-32-10-0-0-0",
+      "fields": [
+        "strings",
+        "1000003",
+        "2",
+        "4",
+        "8",
+        "32",
+        "10",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1000003-256-4-8-32-90-0-0-0",
+      "fields": [
+        "strings",
+        "1000003",
+        "256",
+        "4",
+        "8",
+        "32",
+        "90",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1000003-257-4-8-32-0-0-0-0",
+      "fields": [
+        "strings",
+        "1000003",
+        "257",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings64-1000003-2-4-8-32-0-0-0-0",
+      "fields": [
+        "strings64",
+        "1000003",
+        "2",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings_limit-1000003-2-4-8-32-0-0-0-0",
+      "fields": [
+        "strings_limit",
+        "1000003",
+        "2",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings_tail-1000003-2-4-8-512-0-0-0-0",
+      "fields": [
+        "strings_tail",
+        "1000003",
+        "2",
+        "4",
+        "8",
+        "512",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings_tail-1000003-256-4-8-512-0-0-0-0",
+      "fields": [
+        "strings_tail",
+        "1000003",
+        "256",
+        "4",
+        "8",
+        "512",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "mixed-1000003-2-4-8-32-10-0-0-0",
+      "fields": [
+        "mixed",
+        "1000003",
+        "2",
+        "4",
+        "8",
+        "32",
+        "10",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "mixed-1000003-256-4-8-32-10-0-0-0",
+      "fields": [
+        "mixed",
+        "1000003",
+        "256",
+        "4",
+        "8",
+        "32",
+        "10",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "lists-1000003-256-4-8-32-10-0-0-0",
+      "fields": [
+        "lists",
+        "1000003",
+        "256",
+        "4",
+        "8",
+        "32",
+        "10",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "structs-1000003-2-4-8-32-10-0-0-0",
+      "fields": [
+        "structs",
+        "1000003",
+        "2",
+        "4",
+        "8",
+        "32",
+        "10",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-2-1-4-32-0-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "2",
+        "1",
+        "4",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-2-1-4-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "2",
+        "1",
+        "4",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-2-1-8-32-0-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "2",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-2-1-8-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "2",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-2-1-16-32-0-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "2",
+        "1",
+        "16",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-2-1-16-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "2",
+        "1",
+        "16",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-2-2-8-32-0-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "2",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv",
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-2-2-8-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "2",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-2-2-4-32-10-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "2",
+        "2",
+        "4",
+        "32",
+        "10",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-2-2-4-32-10-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "2",
+        "2",
+        "4",
+        "32",
+        "10",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-256-2-8-32-10-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "256",
+        "2",
+        "8",
+        "32",
+        "10",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-256-2-8-32-10-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "256",
+        "2",
+        "8",
+        "32",
+        "10",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-256-1-8-32-0-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "256",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-256-1-8-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "256",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-3-1-8-32-10-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "3",
+        "1",
+        "8",
+        "32",
+        "10",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-3-1-8-32-10-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "3",
+        "1",
+        "8",
+        "32",
+        "10",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-3-2-8-32-0-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "3",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-3-2-8-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "3",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-2-3-8-32-0-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "2",
+        "3",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-2-3-8-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "2",
+        "3",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-2-4-8-32-0-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "2",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv",
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-2-4-8-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "2",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-2-8-4-32-0-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "2",
+        "8",
+        "4",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-2-8-4-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "2",
+        "8",
+        "4",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-256-4-8-32-0-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "256",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv",
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-256-4-8-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "256",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv",
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-2-4-8-32-90-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "2",
+        "4",
+        "8",
+        "32",
+        "90",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-2-4-8-32-90-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "2",
+        "4",
+        "8",
+        "32",
+        "90",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-256-4-8-32-90-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "256",
+        "4",
+        "8",
+        "32",
+        "90",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-256-4-8-32-90-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "256",
+        "4",
+        "8",
+        "32",
+        "90",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-256-4-8-32-10-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "256",
+        "4",
+        "8",
+        "32",
+        "10",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-256-4-8-32-10-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "256",
+        "4",
+        "8",
+        "32",
+        "10",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1023-3-1-16-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1023",
+        "3",
+        "1",
+        "16",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1024-3-1-16-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1024",
+        "3",
+        "1",
+        "16",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1025-256-1-16-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1025",
+        "256",
+        "1",
+        "16",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-999999-2-1-16-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "999999",
+        "2",
+        "1",
+        "16",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-257-1-16-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "257",
+        "1",
+        "16",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-10000000-2-10-8-64-0-0-1-0",
+      "fields": [
+        "strings",
+        "10000000",
+        "2",
+        "10",
+        "8",
+        "64",
+        "0",
+        "0",
+        "1",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-15-1-8-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "15",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-15-1-8-32-0-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "15",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-16-1-8-32-0-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "16",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-16-1-8-32-0-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "16",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-256-2-4-32-10-0-0-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "256",
+        "2",
+        "4",
+        "32",
+        "10",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-256-2-4-32-10-0-2-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "256",
+        "2",
+        "4",
+        "32",
+        "10",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-1000000-256-4-8-32-0-0-3-0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "256",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "3",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1000000-200-10-8-64-0-0-3-0",
+      "fields": [
+        "strings",
+        "1000000",
+        "200",
+        "10",
+        "8",
+        "64",
+        "0",
+        "0",
+        "3",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-core.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings_tail-n1000003-p2-c2-w8-l512-z0-m0-d0-s7",
+      "fields": [
+        "strings_tail",
+        "1000003",
+        "2",
+        "2",
+        "8",
+        "512",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings_tail-n1000003-p2-c2-w8-l512-z0-m0-d2-s7",
+      "fields": [
+        "strings_tail",
+        "1000003",
+        "2",
+        "2",
+        "8",
+        "512",
+        "0",
+        "0",
+        "2",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings_tail-n1000003-p256-c2-w8-l512-z0-m0-d0-s7",
+      "fields": [
+        "strings_tail",
+        "1000003",
+        "256",
+        "2",
+        "8",
+        "512",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings_tail-n1000003-p256-c2-w8-l512-z0-m0-d2-s7",
+      "fields": [
+        "strings_tail",
+        "1000003",
+        "256",
+        "2",
+        "8",
+        "512",
+        "0",
+        "0",
+        "2",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n4194303-p2-c2-w8-l129-z0-m0-d0-s7",
+      "fields": [
+        "strings",
+        "4194303",
+        "2",
+        "2",
+        "8",
+        "129",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n4194303-p2-c2-w8-l129-z0-m0-d2-s7",
+      "fields": [
+        "strings",
+        "4194303",
+        "2",
+        "2",
+        "8",
+        "129",
+        "0",
+        "0",
+        "2",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n4194304-p2-c2-w8-l129-z0-m0-d0-s7",
+      "fields": [
+        "strings",
+        "4194304",
+        "2",
+        "2",
+        "8",
+        "129",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n4194304-p2-c2-w8-l129-z0-m0-d2-s7",
+      "fields": [
+        "strings",
+        "4194304",
+        "2",
+        "2",
+        "8",
+        "129",
+        "0",
+        "0",
+        "2",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n4194305-p2-c2-w8-l129-z0-m0-d0-s7",
+      "fields": [
+        "strings",
+        "4194305",
+        "2",
+        "2",
+        "8",
+        "129",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n4194305-p2-c2-w8-l129-z0-m0-d2-s7",
+      "fields": [
+        "strings",
+        "4194305",
+        "2",
+        "2",
+        "8",
+        "129",
+        "0",
+        "0",
+        "2",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "ctrl-strings-1023-2-2-8-32-0-0-0-0",
+      "fields": [
+        "strings",
+        "1023",
+        "2",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "ctrl-strings-1024-2-2-8-32-0-0-0-0",
+      "fields": [
+        "strings",
+        "1024",
+        "2",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "ctrl-strings-1025-256-3-8-32-0-0-0-0",
+      "fields": [
+        "strings",
+        "1025",
+        "256",
+        "3",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": true
+    },
+    {
+      "id": "ctrl-strings-1025-257-4-8-32-0-0-0-0",
+      "fields": [
+        "strings",
+        "1025",
+        "257",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "ctrl-strings-1000000-2-4-8-32-90-0-0-0",
+      "fields": [
+        "strings",
+        "1000000",
+        "2",
+        "4",
+        "8",
+        "32",
+        "90",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "ctrl-strings-1000000-256-4-8-32-90-0-0-0",
+      "fields": [
+        "strings",
+        "1000000",
+        "256",
+        "4",
+        "8",
+        "32",
+        "90",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "ctrl-strings-1000000-2-1-8-32-0-0-0-0",
+      "fields": [
+        "strings",
+        "1000000",
+        "2",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "ctrl-mixed-1000000-2-4-8-32-0-0-0-0",
+      "fields": [
+        "mixed",
+        "1000000",
+        "2",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "ctrl-strings64-1025-2-4-8-32-0-0-0-0",
+      "fields": [
+        "strings64",
+        "1025",
+        "2",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "ctrl-strings_limit-1025-2-4-8-32-0-0-0-0",
+      "fields": [
+        "strings_limit",
+        "1025",
+        "2",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n1-p1-c4-l32-z0-d0-s0",
+      "fields": [
+        "fixed",
+        "1",
+        "1",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n1-p1-c4-l32-z100-d0-s0",
+      "fields": [
+        "fixed",
+        "1",
+        "1",
+        "4",
+        "8",
+        "32",
+        "100",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n1-p17-c4-l32-z100-d0-s0",
+      "fields": [
+        "fixed",
+        "1",
+        "17",
+        "4",
+        "8",
+        "32",
+        "100",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n1025-p1-c4-l32-z100-d0-s0",
+      "fields": [
+        "fixed",
+        "1025",
+        "1",
+        "4",
+        "8",
+        "32",
+        "100",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n1025-p17-c4-l32-z0-d0-s0",
+      "fields": [
+        "fixed",
+        "1025",
+        "17",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n1025-p17-c4-l32-z100-d0-s0",
+      "fields": [
+        "fixed",
+        "1025",
+        "17",
+        "4",
+        "8",
+        "32",
+        "100",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n1000000-p1-c4-l32-z100-d0-s0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "1",
+        "4",
+        "8",
+        "32",
+        "100",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n1000000-p17-c4-l32-z0-d0-s0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "17",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n1-p1-c4-l32-z0-d0-s0",
+      "fields": [
+        "strings",
+        "1",
+        "1",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n1-p1-c4-l32-z100-d0-s0",
+      "fields": [
+        "strings",
+        "1",
+        "1",
+        "4",
+        "8",
+        "32",
+        "100",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n1-p17-c4-l32-z100-d0-s0",
+      "fields": [
+        "strings",
+        "1",
+        "17",
+        "4",
+        "8",
+        "32",
+        "100",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n1025-p1-c4-l32-z100-d0-s0",
+      "fields": [
+        "strings",
+        "1025",
+        "1",
+        "4",
+        "8",
+        "32",
+        "100",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n1025-p17-c4-l32-z0-d0-s0",
+      "fields": [
+        "strings",
+        "1025",
+        "17",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n1025-p17-c4-l32-z100-d0-s0",
+      "fields": [
+        "strings",
+        "1025",
+        "17",
+        "4",
+        "8",
+        "32",
+        "100",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n1000000-p1-c4-l32-z100-d0-s0",
+      "fields": [
+        "strings",
+        "1000000",
+        "1",
+        "4",
+        "8",
+        "32",
+        "100",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n1000000-p17-c4-l32-z0-d0-s0",
+      "fields": [
+        "strings",
+        "1000000",
+        "17",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n1000000-p257-c2-l32-z0-d2-s0",
+      "fields": [
+        "strings",
+        "1000000",
+        "257",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n1000000-p257-c4-l32-z0-d2-s0",
+      "fields": [
+        "strings",
+        "1000000",
+        "257",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n1000000-p256-c2-l32-z0-d2-s0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "256",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n1000000-p257-c2-l32-z0-d2-s0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "257",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n1000000-p257-c4-l32-z0-d2-s0",
+      "fields": [
+        "fixed",
+        "1000000",
+        "257",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "mixed-n1000000-p2-c2-l32-z0-d2-s0",
+      "fields": [
+        "mixed",
+        "1000000",
+        "2",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "mixed-n1000000-p2-c4-l32-z0-d2-s0",
+      "fields": [
+        "mixed",
+        "1000000",
+        "2",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "mixed-n1000000-p256-c2-l32-z0-d2-s0",
+      "fields": [
+        "mixed",
+        "1000000",
+        "256",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "mixed-n1000000-p256-c4-l32-z0-d2-s0",
+      "fields": [
+        "mixed",
+        "1000000",
+        "256",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "mixed-n1000000-p257-c2-l32-z0-d2-s0",
+      "fields": [
+        "mixed",
+        "1000000",
+        "257",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "mixed-n1000000-p257-c4-l32-z0-d2-s0",
+      "fields": [
+        "mixed",
+        "1000000",
+        "257",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-s01.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "single-0",
+      "fields": [
+        "strings",
+        "1000000",
+        "2",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-single-string-valid.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "single-1",
+      "fields": [
+        "strings",
+        "1000000",
+        "2",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-single-string-valid.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "single-2",
+      "fields": [
+        "strings",
+        "1000000",
+        "2",
+        "1",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-single-string-valid.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "single-3",
+      "fields": [
+        "strings",
+        "1000000",
+        "2",
+        "1",
+        "8",
+        "128",
+        "0",
+        "0",
+        "2",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-single-string-valid.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "single-4",
+      "fields": [
+        "strings",
+        "1000000",
+        "2",
+        "1",
+        "8",
+        "512",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-single-string-valid.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "single-5",
+      "fields": [
+        "strings",
+        "1000000",
+        "2",
+        "1",
+        "8",
+        "512",
+        "0",
+        "0",
+        "2",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-single-string-valid.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "single-6",
+      "fields": [
+        "strings",
+        "4000003",
+        "2",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-single-string-valid.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "single-7",
+      "fields": [
+        "strings",
+        "4000003",
+        "2",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-single-string-valid.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "single-8",
+      "fields": [
+        "strings",
+        "4000003",
+        "2",
+        "1",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-single-string-valid.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "single-9",
+      "fields": [
+        "strings",
+        "4000003",
+        "2",
+        "1",
+        "8",
+        "128",
+        "0",
+        "0",
+        "2",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-single-string-valid.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "single-11",
+      "fields": [
+        "strings",
+        "4000003",
+        "2",
+        "1",
+        "8",
+        "512",
+        "0",
+        "0",
+        "2",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-single-string-valid.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "single-12",
+      "fields": [
+        "strings",
+        "10000000",
+        "2",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-single-string-valid.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "single-13",
+      "fields": [
+        "strings",
+        "10000000",
+        "2",
+        "1",
+        "8",
+        "32",
+        "0",
+        "0",
+        "2",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-single-string-valid.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "single-14",
+      "fields": [
+        "strings",
+        "10000000",
+        "2",
+        "1",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-single-string-valid.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "single-15",
+      "fields": [
+        "strings",
+        "10000000",
+        "2",
+        "1",
+        "8",
+        "128",
+        "0",
+        "0",
+        "2",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-single-string-valid.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "single-16",
+      "fields": [
+        "strings",
+        "8000003",
+        "2",
+        "1",
+        "8",
+        "512",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-single-string-valid.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "single-17",
+      "fields": [
+        "strings",
+        "8000003",
+        "2",
+        "1",
+        "8",
+        "512",
+        "0",
+        "0",
+        "2",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-single-string-valid.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "identity-0",
+      "fields": [
+        "strings_uniform",
+        "1025",
+        "2",
+        "4",
+        "8",
+        "128",
+        "1",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-identity-final.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "identity-1",
+      "fields": [
+        "strings_uniform",
+        "1000000",
+        "2",
+        "4",
+        "8",
+        "128",
+        "1",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-identity-final.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "identity-2",
+      "fields": [
+        "strings_uniform",
+        "1000000",
+        "200",
+        "10",
+        "8",
+        "128",
+        "1",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-identity-final.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "identity-3",
+      "fields": [
+        "strings_uniform",
+        "1000000",
+        "257",
+        "10",
+        "8",
+        "128",
+        "1",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-identity-final.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "identity-4",
+      "fields": [
+        "fixed_uniform",
+        "1000000",
+        "2",
+        "4",
+        "8",
+        "128",
+        "1",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-identity-final.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "identity-5",
+      "fields": [
+        "fixed_uniform",
+        "1000000",
+        "256",
+        "4",
+        "8",
+        "128",
+        "1",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-identity-final.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "identity-6",
+      "fields": [
+        "strings",
+        "1000000",
+        "1",
+        "10",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-identity-final.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "identity-7",
+      "fields": [
+        "strings",
+        "1025",
+        "1",
+        "10",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-identity-final.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "identity-8",
+      "fields": [
+        "mixed",
+        "1000000",
+        "1",
+        "4",
+        "8",
+        "128",
+        "10",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-identity-final.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "identity-9",
+      "fields": [
+        "lists",
+        "1025",
+        "1",
+        "2",
+        "8",
+        "128",
+        "10",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-identity-final.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "identity-10",
+      "fields": [
+        "structs",
+        "1025",
+        "1",
+        "2",
+        "8",
+        "128",
+        "10",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-identity-final.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "identity-extra-11",
+      "fields": [
+        "strings",
+        "1025",
+        "1",
+        "1",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-identity-final.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "identity-extra-12",
+      "fields": [
+        "strings",
+        "1000000",
+        "1",
+        "1",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-identity-final.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "identity-extra-13",
+      "fields": [
+        "strings",
+        "1025",
+        "1",
+        "2",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-identity-final.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "identity-extra-14",
+      "fields": [
+        "strings",
+        "1000000",
+        "1",
+        "2",
+        "8",
+        "128",
+        "10",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-identity-final.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "identity-extra-15",
+      "fields": [
+        "mixed",
+        "1025",
+        "1",
+        "4",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-identity-final.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "empty-first-n1025-p2-c2-z0-s0",
+      "fields": [
+        "strings_empty_uniform",
+        "1025",
+        "2",
+        "2",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "empty-first-n1025-p200-c2-z0-s0",
+      "fields": [
+        "strings_empty_uniform",
+        "1025",
+        "200",
+        "2",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "empty-first-n1025-p2-c4-z0-s7",
+      "fields": [
+        "strings_empty_uniform",
+        "1025",
+        "2",
+        "4",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "empty-first-n1025-p2-c10-z0-s0",
+      "fields": [
+        "strings_empty_uniform",
+        "1025",
+        "2",
+        "10",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "empty-first-n1000000-p2-c2-z0-s0",
+      "fields": [
+        "strings_empty_uniform",
+        "1000000",
+        "2",
+        "2",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "empty-first-n1000000-p200-c2-z0-s0",
+      "fields": [
+        "strings_empty_uniform",
+        "1000000",
+        "200",
+        "2",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "empty-first-n1000000-p2-c3-z0-s0",
+      "fields": [
+        "strings_empty_uniform",
+        "1000000",
+        "2",
+        "3",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "empty-first-n1000000-p2-c4-z0-s0",
+      "fields": [
+        "strings_empty_uniform",
+        "1000000",
+        "2",
+        "4",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "empty-first-n1000000-p200-c4-z0-s0",
+      "fields": [
+        "strings_empty_uniform",
+        "1000000",
+        "200",
+        "4",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "empty-first-n1000000-p257-c4-z0-s0",
+      "fields": [
+        "strings_empty_uniform",
+        "1000000",
+        "257",
+        "4",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "empty-first-n1000000-p2-c4-z10-s0",
+      "fields": [
+        "strings_empty_uniform",
+        "1000000",
+        "2",
+        "4",
+        "8",
+        "128",
+        "10",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "empty-first-n4000001-p2-c2-z0-s7",
+      "fields": [
+        "strings_empty_uniform",
+        "4000001",
+        "2",
+        "2",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "empty-first-n1025-p1-c4-z0-s7",
+      "fields": [
+        "strings_empty_uniform",
+        "1025",
+        "1",
+        "4",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "empty-first-n1000000-p1-c4-z0-s0",
+      "fields": [
+        "strings_empty_uniform",
+        "1000000",
+        "1",
+        "4",
+        "8",
+        "128",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "null-first-fixed-n1025-p2-c2-w4",
+      "fields": [
+        "fixed_uniform",
+        "1025",
+        "2",
+        "2",
+        "4",
+        "128",
+        "1",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "null-first-fixed-n999999-p15-c2-w8",
+      "fields": [
+        "fixed_uniform",
+        "999999",
+        "15",
+        "2",
+        "8",
+        "128",
+        "1",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "null-first-fixed-n1000000-p16-c2-w16",
+      "fields": [
+        "fixed_uniform",
+        "1000000",
+        "16",
+        "2",
+        "16",
+        "128",
+        "1",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "null-first-fixed-n1000001-p256-c2-w8",
+      "fields": [
+        "fixed_uniform",
+        "1000001",
+        "256",
+        "2",
+        "8",
+        "128",
+        "1",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "null-first-fixed-n1000000-p257-c3-w4",
+      "fields": [
+        "fixed_uniform",
+        "1000000",
+        "257",
+        "3",
+        "4",
+        "128",
+        "1",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "null-first-fixed-n1000000-p15-c4-w16",
+      "fields": [
+        "fixed_uniform",
+        "1000000",
+        "15",
+        "4",
+        "16",
+        "128",
+        "1",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "null-first-fixed-n1000000-p16-c8-w4",
+      "fields": [
+        "fixed_uniform",
+        "1000000",
+        "16",
+        "8",
+        "4",
+        "128",
+        "1",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "null-first-fixed-n1000000-p256-c10-w8",
+      "fields": [
+        "fixed_uniform",
+        "1000000",
+        "256",
+        "10",
+        "8",
+        "128",
+        "1",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "null-first-strings-n1025-p200-c2",
+      "fields": [
+        "strings_uniform",
+        "1025",
+        "200",
+        "2",
+        "8",
+        "128",
+        "1",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "null-first-strings-n1000000-p200-c2",
+      "fields": [
+        "strings_uniform",
+        "1000000",
+        "200",
+        "2",
+        "8",
+        "128",
+        "1",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": false,
+      "sources": [
+        "fixtures-empty.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n10000000-p256-c1-w8-l0-z0-m0-d0-s0",
+      "fields": [
+        "fixed",
+        "10000000",
+        "256",
+        "1",
+        "8",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "repeat.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n10000000-p256-c2-w8-l0-z0-m0-d0-s0",
+      "fields": [
+        "fixed",
+        "10000000",
+        "256",
+        "2",
+        "8",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "repeat.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n10000000-p256-c2-w8-l0-z90-m0-d0-s0",
+      "fields": [
+        "fixed",
+        "10000000",
+        "256",
+        "2",
+        "8",
+        "0",
+        "90",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "repeat.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n10000000-p2-c2-w8-l128-z0-m0-d2-s0",
+      "fields": [
+        "strings",
+        "10000000",
+        "2",
+        "2",
+        "8",
+        "128",
+        "0",
+        "0",
+        "2",
+        "0"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "fixtures-s02.tsv",
+        "repeat.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n1000003-p256-c8-w8-l0-z90-m1-d0-s7",
+      "fields": [
+        "fixed",
+        "1000003",
+        "256",
+        "8",
+        "8",
+        "0",
+        "90",
+        "1",
+        "0",
+        "7"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "repeat.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n1000003-p256-c4-w8-l0-z100-m1-d0-s7",
+      "fields": [
+        "fixed",
+        "1000003",
+        "256",
+        "4",
+        "8",
+        "0",
+        "100",
+        "1",
+        "0",
+        "7"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "repeat.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n1025-p2-c2-w8-l0-z0-m1-d0-s7",
+      "fields": [
+        "strings",
+        "1025",
+        "2",
+        "2",
+        "8",
+        "0",
+        "0",
+        "1",
+        "0",
+        "7"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "repeat.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n4000003-p2-c2-w8-l1-z0-m0-d0-s7",
+      "fields": [
+        "strings",
+        "4000003",
+        "2",
+        "2",
+        "8",
+        "1",
+        "0",
+        "0",
+        "0",
+        "7"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "fixtures-s02.tsv",
+        "repeat.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n65537-p256-c1-w4-l0-z0-m1-d0-s7",
+      "fields": [
+        "fixed",
+        "65537",
+        "256",
+        "1",
+        "4",
+        "0",
+        "0",
+        "1",
+        "0",
+        "7"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "repeat.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n10000003-p2-c4-w8-l0-z0-m0-d2-s7",
+      "fields": [
+        "fixed",
+        "10000003",
+        "2",
+        "4",
+        "8",
+        "0",
+        "0",
+        "0",
+        "2",
+        "7"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "repeat.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n10000000-p200-c10-w8-l64-z0-m0-d0-s0",
+      "fields": [
+        "strings",
+        "10000000",
+        "200",
+        "10",
+        "8",
+        "64",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "fixtures-s02.tsv",
+        "repeat.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "mixed-n10000000-p256-c3-w8-l64-z10-m0-d0-s0",
+      "fields": [
+        "mixed",
+        "10000000",
+        "256",
+        "3",
+        "8",
+        "64",
+        "10",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "repeat.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n1000000-p257-c10-w8-l64-z0-m0-d0-s0",
+      "fields": [
+        "strings",
+        "1000000",
+        "257",
+        "10",
+        "8",
+        "64",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "repeat.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-n1000000-p257-c10-w8-l64-z0-m0-d1-s0",
+      "fields": [
+        "strings",
+        "1000000",
+        "257",
+        "10",
+        "8",
+        "64",
+        "0",
+        "0",
+        "1",
+        "0"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "repeat.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "fixed-n1024-p257-c2-w1-l0-z0-m0-d0-s0",
+      "fields": [
+        "fixed",
+        "1024",
+        "257",
+        "2",
+        "1",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "repeat.tsv"
+      ],
+      "fresh_anchor": false
+    },
+    {
+      "id": "strings-1000000-2-2-8-32-0-0-0-0",
+      "fields": [
+        "strings",
+        "1000000",
+        "2",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "fixtures-core.tsv",
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": true
+    },
+    {
+      "id": "strings-1000000-256-2-8-32-0-0-0-0",
+      "fields": [
+        "strings",
+        "1000000",
+        "256",
+        "2",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "fixtures-core.tsv",
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": true
+    },
+    {
+      "id": "strings-1000000-2-4-8-32-0-0-0-0",
+      "fields": [
+        "strings",
+        "1000000",
+        "2",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "fixtures-core.tsv",
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": true
+    },
+    {
+      "id": "strings-1000000-256-4-8-32-0-0-0-0",
+      "fields": [
+        "strings",
+        "1000000",
+        "256",
+        "4",
+        "8",
+        "32",
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "old_348_covered": true,
+      "sources": [
+        "fixtures-core.tsv",
+        "fixtures-s02.tsv"
+      ],
+      "fresh_anchor": true
+    }
+  ]
+}

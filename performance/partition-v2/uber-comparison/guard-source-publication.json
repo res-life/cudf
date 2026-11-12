@@ -1,0 +1,9 @@
+{
+  "number": 18,
+  "old_sha": "bdea6e1f97406123480da929ec1761debf5a996c",
+  "local_compiled_sha": "74fe237ab462746119e0e9bb82e5f152ac31d3d5",
+  "published_sha": "74fe237ab462746119e0e9bb82e5f152ac31d3d5",
+  "identical_tree_sha": "c51ed7d7044b75e00fa87436b2a75bd9ba2775d7",
+  "exact_source_tree_preserved": true,
+  "update_method": "gh GraphQL updateRefs beforeOid compare-and-swap; verified after PR metadata propagation"
+}

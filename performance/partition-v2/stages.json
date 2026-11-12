@@ -84,9 +84,9 @@
     "branch": "stack/partition-v2-10-identity-uniform-columns",
     "base": "stack/partition-v2-09-single-fixed-ranks",
     "title": "Batch identity STRING copies and omit uniform columns",
-    "sha": "bdea6e1f97406123480da929ec1761debf5a996c",
-    "production_lines": 161,
-    "variant": "identity-inline",
+    "sha": "74fe237ab462746119e0e9bb82e5f152ac31d3d5",
+    "production_lines": 162,
+    "variant": "identity-null-only",
     "feature": 10
   }
 }

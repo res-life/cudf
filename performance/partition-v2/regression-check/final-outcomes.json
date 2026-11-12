@@ -1,0 +1,175 @@
+{
+  "1": {
+    "pr": 9,
+    "head": "13a6aeb2a849536ae7d41e80c931dfdbd852bc03",
+    "confirmation_cases": 1,
+    "confirmation_nominal_slowdowns": [],
+    "confirmation_over_2percent": [],
+    "confirmation_unresolved_2percent": [
+      "fixed-n1025-p17-c4-l32-z0-d0-s0"
+    ]
+  },
+  "2": {
+    "pr": 10,
+    "head": "30b510f810ed78d2024b3780d07b5cff30df0368",
+    "confirmation_cases": 3,
+    "confirmation_nominal_slowdowns": [],
+    "confirmation_over_2percent": [],
+    "confirmation_unresolved_2percent": [
+      "ctrl-strings-1025-257-4-8-32-0-0-0-0",
+      "ctrl-strings-1000000-2-1-8-32-0-0-0-0",
+      "ctrl-strings64-1025-2-4-8-32-0-0-0-0"
+    ]
+  },
+  "3": {
+    "pr": 11,
+    "head": "7abda7e759421f545b300cf7cb8e8bd09a9b03ff",
+    "confirmation_cases": 5,
+    "confirmation_nominal_slowdowns": [
+      "ctrl-strings-1025-256-3-8-32-0-0-0-0"
+    ],
+    "confirmation_over_2percent": [],
+    "confirmation_unresolved_2percent": [
+      "strings-n1000003-p2-c2-w8-l8-z0-m0-d3-s7",
+      "strings-n1000003-p2-c2-w8-l9-z0-m0-d0-s7",
+      "ctrl-strings-1025-256-3-8-32-0-0-0-0",
+      "ctrl-strings-1000000-256-4-8-32-90-0-0-0"
+    ]
+  },
+  "4": {
+    "pr": 12,
+    "head": "2790608aa81dc527b5c4210e665be52b1e1216b2",
+    "confirmation_cases": 5,
+    "confirmation_nominal_slowdowns": [],
+    "confirmation_over_2percent": [],
+    "confirmation_unresolved_2percent": [
+      "strings-1-17-4-8-32-0-0-0-0",
+      "strings-1025-1-4-8-32-0-0-0-0",
+      "strings-1000000-1-4-8-32-0-0-0-0",
+      "fixed-1000000-256-2-4-32-10-0-0-0"
+    ]
+  },
+  "5": {
+    "pr": 13,
+    "head": "7a7bde74547fb5de15d6bf7cc939f0469493c59a",
+    "confirmation_cases": 1,
+    "confirmation_nominal_slowdowns": [],
+    "confirmation_over_2percent": [],
+    "confirmation_unresolved_2percent": [
+      "strings-1024-2-2-8-32-0-0-0-7"
+    ]
+  },
+  "6": {
+    "pr": 14,
+    "head": "92f0dd516bce2aadad765af5a90d2f7efb644384",
+    "confirmation_cases": 11,
+    "confirmation_nominal_slowdowns": [],
+    "confirmation_over_2percent": [],
+    "confirmation_unresolved_2percent": [
+      "strings-1023-2-2-8-32-0-0-0-7",
+      "strings-1024-2-2-8-32-0-0-0-7",
+      "strings-1025-2-2-8-32-0-0-0-7",
+      "strings-1023-2-3-8-32-0-0-0-7",
+      "strings-1024-2-3-8-32-0-0-0-7",
+      "strings-1025-2-3-8-32-0-0-0-7",
+      "strings-1000003-256-4-8-32-90-0-0-0",
+      "fixed-1000000-2-2-4-32-10-0-0-0",
+      "fixed-1025-256-1-16-32-0-0-0-0",
+      "fixed-1000000-16-1-8-32-0-0-0-0"
+    ]
+  },
+  "7": {
+    "pr": 15,
+    "head": "39af948e7be1de73bd19ee2cd094fd56c5c999eb",
+    "confirmation_cases": 15,
+    "confirmation_nominal_slowdowns": [],
+    "confirmation_over_2percent": [],
+    "confirmation_unresolved_2percent": [
+      "strings-1-17-4-8-32-0-0-0-0",
+      "strings-1000000-17-4-8-32-100-0-0-0",
+      "fixed-1000000-17-4-8-32-100-0-0-0",
+      "strings-1023-2-1-8-32-0-0-0-7",
+      "strings-1024-2-1-8-32-0-0-0-7",
+      "fixed-1000000-2-1-4-32-0-0-2-0",
+      "fixed-1000000-256-2-8-32-10-0-0-0",
+      "fixed-1000000-256-1-8-32-0-0-2-0",
+      "fixed-1000000-256-1-8-32-0-0-0-0",
+      "fixed-1000000-3-1-8-32-10-0-0-0",
+      "fixed-1000000-15-1-8-32-0-0-0-0",
+      "fixed-1000000-15-1-8-32-0-0-2-0",
+      "fixed-1000000-2-3-8-32-0-0-2-0"
+    ]
+  },
+  "8": {
+    "pr": 16,
+    "head": "5f1daa873591dc095081463cf708dd296b7fe1fb",
+    "confirmation_cases": 9,
+    "confirmation_nominal_slowdowns": [],
+    "confirmation_over_2percent": [],
+    "confirmation_unresolved_2percent": [
+      "strings-1024-2-2-8-32-0-0-0-7",
+      "strings-1025-2-2-8-32-0-0-0-7",
+      "strings-1025-2-3-8-32-0-0-0-7",
+      "fixed-1000000-2-2-8-32-0-0-0-0",
+      "fixed-1000000-3-2-8-32-0-0-0-0",
+      "fixed-1024-3-1-16-32-0-0-0-0",
+      "fixed-1025-256-1-16-32-0-0-0-0",
+      "fixed-1000000-15-1-8-32-0-0-0-0"
+    ]
+  },
+  "9": {
+    "pr": 17,
+    "head": "c10722c97d53cf68454a5c146e4584a9290364f2",
+    "confirmation_cases": 9,
+    "confirmation_nominal_slowdowns": [],
+    "confirmation_over_2percent": [],
+    "confirmation_unresolved_2percent": [
+      "strings-1025-2-1-8-32-0-0-0-7",
+      "strings-1025-2-2-8-32-0-0-0-7",
+      "fixed-1000000-2-1-16-32-0-0-0-0",
+      "fixed-1000000-16-1-8-32-0-0-2-0"
+    ]
+  },
+  "10": {
+    "pr": 18,
+    "head": "74fe237ab462746119e0e9bb82e5f152ac31d3d5",
+    "confirmation_cases": 35,
+    "confirmation_nominal_slowdowns": [
+      "fixed-1000000-256-1-8-32-0-0-2-0"
+    ],
+    "confirmation_over_2percent": [],
+    "confirmation_unresolved_2percent": [
+      "strings-1023-2-1-8-32-0-0-0-7",
+      "strings-1025-2-1-8-32-0-0-0-7",
+      "strings-1023-2-2-8-32-0-0-0-7",
+      "strings-1024-2-2-8-32-0-0-0-7",
+      "strings-1025-2-2-8-32-0-0-0-7",
+      "strings-1023-2-3-8-32-0-0-0-7",
+      "strings_tail-1000003-2-4-8-512-0-0-0-0",
+      "fixed-1000000-2-1-8-32-0-0-2-0",
+      "fixed-1000000-2-2-8-32-0-0-2-0",
+      "fixed-1000000-3-1-8-32-10-0-2-0",
+      "fixed-999999-2-1-16-32-0-0-0-0",
+      "fixed-1000000-256-2-4-32-10-0-0-0",
+      "identity-9",
+      "identity-10",
+      "identity-extra-11",
+      "identity-extra-13",
+      "identity-extra-15",
+      "fixed-1-17-4-8-32-0-0-0-0",
+      "fixed-1000000-17-4-8-32-100-0-0-0",
+      "strings-1024-2-1-8-32-0-0-0-7",
+      "fixed-1000000-2-2-4-32-10-0-2-0",
+      "fixed-1000000-2-2-4-32-10-0-0-0",
+      "fixed-1000000-256-2-8-32-10-0-2-0",
+      "fixed-1000000-256-2-8-32-10-0-0-0",
+      "fixed-1000000-256-1-8-32-0-0-2-0",
+      "fixed-1000000-256-1-8-32-0-0-0-0",
+      "fixed-1000000-3-1-8-32-10-0-0-0",
+      "fixed-1000000-256-4-8-32-90-0-2-0",
+      "fixed-1023-3-1-16-32-0-0-0-0",
+      "fixed-1025-256-1-16-32-0-0-0-0",
+      "fixed-1000000-256-2-4-32-10-0-2-0"
+    ]
+  }
+}

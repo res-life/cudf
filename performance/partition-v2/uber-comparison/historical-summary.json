@@ -1,0 +1,65 @@
+{
+  "overall": {
+    "cases": 348,
+    "event": 3.1220207016936325,
+    "wall": 3.0528160345646924,
+    "peak_reduction": 28.058461672076472
+  },
+  "groups": {
+    "Large fixed-width, no NULLs": {
+      "cases": 94,
+      "event": 4.368869745622183,
+      "wall": 4.266625671353572,
+      "peak_reduction": 19.80622861203898
+    },
+    "Large fixed-width, NULL target >=75%": {
+      "cases": 37,
+      "event": 5.668355611010463,
+      "wall": 5.477198373051359,
+      "peak_reduction": 32.05289311745062
+    },
+    "Large non-null STRING": {
+      "cases": 116,
+      "event": 2.423985518140976,
+      "wall": 2.4108777567487656,
+      "peak_reduction": 32.22951708163157
+    },
+    "Empty / identity inputs": {
+      "cases": 2,
+      "event": 16.97106246660625,
+      "wall": 13.001487330410407,
+      "peak_reduction": 75.16501325352908
+    },
+    "Other boundaries / fallbacks": {
+      "cases": 46,
+      "event": 2.3130613562584728,
+      "wall": 2.205668993864894,
+      "peak_reduction": 37.15382396360491
+    },
+    "Other large nullable fixed-width": {
+      "cases": 25,
+      "event": 3.671423166236368,
+      "wall": 3.56676901399692,
+      "peak_reduction": 26.45352145100831
+    },
+    "Uniform NULL / empty STRING": {
+      "cases": 2,
+      "event": 9.45984874455232,
+      "wall": 8.500910021850244,
+      "peak_reduction": 52.86176775411073
+    },
+    "Large nullable STRING": {
+      "cases": 13,
+      "event": 1.3833981359528702,
+      "wall": 1.3828631585152227,
+      "peak_reduction": 7.571764286768665
+    },
+    "Large mixed schemas": {
+      "cases": 13,
+      "event": 1.4945381632610775,
+      "wall": 1.4928238849887672,
+      "peak_reduction": 19.46751609166987
+    }
+  },
+  "confirmed_regression_cases": []
+}

@@ -1,0 +1,16 @@
+{
+  "exact_uber_all_scenarios_faster": false,
+  "exact_uber_confirmed_regressions": [
+    "identity-10"
+  ],
+  "stack_confirmed_regressions": [],
+  "fresh_cases": 210,
+  "historical_cases": 348,
+  "fresh_multi_string_cases": 26,
+  "uber_multi_string_speedup": 2.2072896468435097,
+  "stack_multi_string_speedup": 2.2005013174512427,
+  "small_split_case_uber_vs_baseline": 2.762209169589672,
+  "small_split_case_stack_vs_baseline": 3.30615590997168,
+  "incremental_small_regressions_accepted_under_final_gate": true,
+  "new_s03_guard_adopted": false
+}

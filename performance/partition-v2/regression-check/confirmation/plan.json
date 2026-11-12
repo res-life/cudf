@@ -1,0 +1,115 @@
+[
+  {
+    "stage": -3,
+    "pr": null,
+    "parent": "identity-null-only",
+    "child": "identity-null-only",
+    "fixtures": "fixtures-aa-empty.tsv",
+    "cases": 2,
+    "bench": "empty"
+  },
+  {
+    "stage": -2,
+    "pr": null,
+    "parent": "s03",
+    "child": "s03",
+    "fixtures": "fixtures-aa-s03.tsv",
+    "cases": 1
+  },
+  {
+    "stage": -1,
+    "pr": null,
+    "parent": "s02",
+    "child": "s02",
+    "fixtures": "fixtures-aa-s02.tsv",
+    "cases": 1
+  },
+  {
+    "stage": 0,
+    "pr": null,
+    "parent": "safe07",
+    "child": "safe07",
+    "fixtures": "fixtures-aa.tsv",
+    "cases": 3
+  },
+  {
+    "stage": 1,
+    "pr": 9,
+    "parent": "baseline",
+    "child": "s01",
+    "fixtures": "fixtures-s01.tsv",
+    "cases": 1
+  },
+  {
+    "stage": 2,
+    "pr": 10,
+    "parent": "s01",
+    "child": "s02",
+    "fixtures": "fixtures-s02.tsv",
+    "cases": 3
+  },
+  {
+    "stage": 3,
+    "pr": 11,
+    "parent": "s02",
+    "child": "s03",
+    "fixtures": "fixtures-s03.tsv",
+    "cases": 5
+  },
+  {
+    "stage": 4,
+    "pr": 12,
+    "parent": "s03",
+    "child": "safe04",
+    "fixtures": "fixtures-s04.tsv",
+    "cases": 5
+  },
+  {
+    "stage": 5,
+    "pr": 13,
+    "parent": "safe04",
+    "child": "priority05-fixed",
+    "fixtures": "fixtures-s05.tsv",
+    "cases": 1
+  },
+  {
+    "stage": 6,
+    "pr": 14,
+    "parent": "priority05-fixed",
+    "child": "priority06-reordered",
+    "fixtures": "fixtures-s06.tsv",
+    "cases": 11
+  },
+  {
+    "stage": 7,
+    "pr": 15,
+    "parent": "priority06-reordered",
+    "child": "safe07",
+    "fixtures": "fixtures-s07.tsv",
+    "cases": 15
+  },
+  {
+    "stage": 8,
+    "pr": 16,
+    "parent": "safe07",
+    "child": "safe08",
+    "fixtures": "fixtures-s08.tsv",
+    "cases": 9
+  },
+  {
+    "stage": 9,
+    "pr": 17,
+    "parent": "safe08",
+    "child": "safe09",
+    "fixtures": "fixtures-s09.tsv",
+    "cases": 9
+  },
+  {
+    "stage": 10,
+    "pr": 18,
+    "parent": "safe09",
+    "child": "identity-null-only",
+    "fixtures": "fixtures-s10.tsv",
+    "cases": 35
+  }
+]

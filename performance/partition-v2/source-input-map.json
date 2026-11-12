@@ -1,0 +1,32 @@
+{
+  "regression-check/partition_bench_regression.cpp": {
+    "exact_compilation_input": "regression-check/partition_bench_regression.cpp.txt",
+    "exact_input_sha256": "a3ef9894abdfbb1557374a9ee15cf64081a57f9b30d4b91bc53b428ead5bf9e9",
+    "licensed_source_sha256": "9a2964fdf108d3e85a0c70cf84375bd001ca2b55d919f5131b5414b4cfa65907",
+    "difference": "SPDX comment prologue only"
+  },
+  "regression-check/partition_bench_empty.cpp": {
+    "exact_compilation_input": "regression-check/partition_bench_empty.cpp.txt",
+    "exact_input_sha256": "6489e8776a2566c430dfbd1f109995ac41d60ccc0a00af9454edca596f092ac0",
+    "licensed_source_sha256": "6ed496473f1c91e100e71621fdaecf568ef3eca23e2d5cad0e1d5a117ae0ee7a",
+    "difference": "SPDX comment prologue only"
+  },
+  "uber-comparison/partition_bench_uber.cpp": {
+    "exact_compilation_input": "uber-comparison/partition_bench_uber.cpp.txt",
+    "exact_input_sha256": "b8e48573ff6efaf9062e50300b28345554a64d58b6b5676d0ebea5a238741dff",
+    "licensed_source_sha256": "2e7790b10d43dac03d895101b32b37344832d4b1f307fea45dbe725a33810c27",
+    "difference": "SPDX comment prologue only"
+  },
+  "harness/partition_bench.cpp": {
+    "exact_compilation_input": "harness/partition_bench.cpp.txt",
+    "exact_input_sha256": "cc1a6fd325d4da7a6da4f9db7e74f077f0ad77da882a5e51700ed52242d48411",
+    "licensed_source_sha256": "3cf54d5a1552fe8b2a4c111819aa3d4257fa2876a5beb903bf5489727b7aa3db",
+    "difference": "SPDX comment prologue only"
+  },
+  "harness/partition_bench_uniform.cpp": {
+    "exact_compilation_input": "harness/partition_bench_uniform.cpp.txt",
+    "exact_input_sha256": "daacd34af77eaddaa83bdb0d25a81a6cc0629b1842b34099319ea89a13ee95c3",
+    "licensed_source_sha256": "8718a17901c79bb8821b0253af35f328611ad594cd48e97fbb888e7657f842c1",
+    "difference": "SPDX comment prologue only"
+  }
+}

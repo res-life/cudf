@@ -1,0 +1,19 @@
+{
+  "sha": "74fe237ab462746119e0e9bb82e5f152ac31d3d5",
+  "partition": {
+    "tests": 1901,
+    "failures": 0,
+    "disabled": 1,
+    "errors": 0
+  },
+  "stream": {
+    "tests": 7,
+    "failures": 0,
+    "disabled": 0,
+    "errors": 0
+  },
+  "sanitizers": [
+    "memcheck",
+    "synccheck"
+  ]
+}

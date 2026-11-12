@@ -1,0 +1,4 @@
+empty-first-n1000000-p200-c2-z0-s0	strings_empty_uniform	1000000	200	2	8	128	0	0	0	0
+empty-first-n4000001-p2-c2-z0-s7	strings_empty_uniform	4000001	2	2	8	128	0	0	0	7
+empty-first-n1025-p1-c4-z0-s7	strings_empty_uniform	1025	1	4	8	128	0	0	0	7
+null-first-fixed-n1000001-p256-c2-w8	fixed_uniform	1000001	256	2	8	128	1	0	0	0
