@@ -1192,6 +1192,12 @@ std::optional<std::pair<std::unique_ptr<table>, std::vector<size_type>>> try_par
     offsets = make_map_partition_offsets<MapType>(partition_map, num_partitions, stream);
   }
   if (!uniform) {
+    auto const strings = std::count_if(input.begin(), input.end(), [](auto const& col) {
+      return col.type().id() == type_id::STRING && col.null_count() == 0;
+    });
+    if (strings < 2) {
+      return std::pair{std::make_unique<table>(input, stream, mr), std::move(offsets)};
+    }
     return std::pair{cudf::detail::partition_identity::copy(input, stream, mr), std::move(offsets)};
   }
 
@@ -1235,6 +1241,31 @@ struct dispatch_map_type {
     if (auto output =
           try_partition_trivial<MapType>(t, partition_map, num_partitions, stream, mr)) {
       return std::move(*output);
+    }
+    // Build all-null columns after the reduced call releases its temporaries.
+    // Retain valid empty STRING columns to preserve the preceding STRING route.
+    auto const rows = t.num_rows();
+    auto const omit = [](column_view const& col) {
+      return col.null_count() == col.size() &&
+             cudf::detail::partition_identity::is_uniform(col);
+    };
+    if (std::any_of(t.begin(), t.end(), omit)) {
+      std::vector<column_view> reduced;
+      for (auto const& col : t) {
+        if (!omit(col)) { reduced.push_back(col); }
+      }
+      auto [result, offsets] = this->template operator()<MapType>(
+        table_view{reduced}, partition_map, num_partitions, stream, mr);
+      auto owned = result->release();
+      std::vector<std::unique_ptr<column>> columns;
+      columns.reserve(t.num_columns());
+      auto next = owned.begin();
+      for (auto const& col : t) {
+        columns.push_back(omit(col)
+                            ? cudf::detail::partition_identity::uniform_column(col, stream, mr)
+                            : std::move(*next++));
+      }
+      return {std::make_unique<table>(std::move(columns), rows), std::move(offsets)};
     }
     if (auto output = cudf::detail::partition_strings_plan::partition<MapType>(
           t, partition_map, num_partitions, stream, mr)) {

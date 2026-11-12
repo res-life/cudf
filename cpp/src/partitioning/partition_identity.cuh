@@ -3,18 +3,53 @@
 #pragma once
 
 #include <cudf/column/column_factories.hpp>
+#include <cudf/detail/gather.cuh>
 #include <cudf/detail/null_mask.hpp>
+#include <cudf/detail/offsets_iterator_factory.cuh>
+#include <cudf/detail/utilities/buffer_factories.hpp>
+#include <cudf/detail/utilities/vector_factories.hpp>
 #include <cudf/null_mask.hpp>
+#include <cudf/strings/detail/gather.cuh>
+#include <cudf/strings/detail/utilities.hpp>
 #include <cudf/strings/utilities.hpp>
 #include <cudf/table/table.hpp>
-#include <cudf/utilities/error.hpp>
 #include <cudf/utilities/traits.hpp>
 
 #include <rmm/device_buffer.hpp>
+#include <rmm/exec_policy.hpp>
 
-#include <memory>
+#include <cuda/iterator>
+#include <thrust/transform.h>
 
 namespace cudf::detail::partition_identity {
+struct string_source {
+  void const* offsets;
+  size_type row_offset;
+  bool wide;
+};
+struct string_bounds {
+  int64_t first;
+  int64_t bytes;
+};
+
+template <int BlockSize>
+CUDF_KERNEL void read_bounds(string_source const* sources,
+                             size_type count,
+                             size_type rows,
+                             string_bounds* output)
+{
+  auto const i = static_cast<std::size_t>(blockIdx.x) * BlockSize + threadIdx.x;
+  if (i >= static_cast<std::size_t>(count)) return;
+  auto const source = sources[i];
+  auto const first  = source.wide ? static_cast<int64_t const*>(source.offsets)[source.row_offset]
+                                  : static_cast<size_type const*>(source.offsets)[source.row_offset];
+  auto const last   = source.wide
+                        ? static_cast<int64_t const*>(source.offsets)[source.row_offset + rows]
+                        : static_cast<size_type const*>(source.offsets)[source.row_offset + rows];
+  output[i]         = {first, last - first};
+}
+
+/** Cached host metadata proves the payload is invariant under a permutation. */
 inline bool is_uniform(column_view const& input)
 {
   bool const flat = is_fixed_width(input.type()) || input.type().id() == type_id::STRING;
@@ -45,10 +80,100 @@ inline std::unique_ptr<column> uniform_column(column_view const& input,
       rows, input.null_count() ? mask_state::ALL_NULL : mask_state::UNALLOCATED, stream, mr));
 }
 
+/**
+ * Identity materialization for CPU-known one-row/one-partition cases.
+ *
+ * String byte bounds are read only for output allocation and offset rebasing.
+ * They never choose the partition algorithm. Nullable strings and nested values
+ * use the normal gather with an implicit identity iterator; no N-entry map.
+ */
 inline std::unique_ptr<table> copy(table_view const& input,
                                    cuda::stream_ref stream,
                                    rmm::device_async_resource_ref mr)
 {
-  return std::make_unique<table>(input, stream, mr);
+  if (input.num_columns() < 2) { return std::make_unique<table>(input, stream, mr); }
+  auto const rows = input.num_rows();
+  std::vector<string_source> sources;
+  for (auto const& col : input)
+    if (col.type().id() == type_id::STRING && col.null_count() == 0) {
+      auto const& offsets = col.child(strings_column_view::offsets_column_index);
+      bool const wide     = offsets.type().id() == type_id::INT64;
+      auto const* data    = wide ? static_cast<void const*>(offsets.data<int64_t>())
+                                 : static_cast<void const*>(offsets.data<size_type>());
+      sources.push_back({data, col.offset(), wide});
+    }
+  if (sources.size() < 2) { return std::make_unique<table>(input, stream, mr); }
+  auto bounds = [&] {
+    if (sources.empty()) return std::vector<string_bounds>{};
+    auto descriptors =
+      cudf::detail::make_device_buffer(sources, stream, cudf::get_current_device_resource_ref());
+    rmm::device_uvector<string_bounds> device_bounds(sources.size(), stream);
+    read_bounds<256><<<(sources.size() + 255) / 256, 256, 0, stream.get()>>>(
+      descriptors.data(), sources.size(), rows, device_bounds.data());
+    CUDF_CUDA_TRY(cudaPeekAtLastError());
+    return cudf::detail::make_std_vector(device_bounds, stream);
+  }();
+  auto const threshold = strings::get_offset64_threshold();
+  for (auto const& b : bounds)
+    CUDF_EXPECTS(b.bytes < threshold || strings::is_large_strings_enabled(),
+                 "Size of output exceeds the column size limit",
+                 std::overflow_error);
+
+  std::vector<std::unique_ptr<column>> columns;
+  columns.reserve(input.num_columns());
+  std::size_t string_index = 0;
+  auto const indices       = cuda::counting_iterator<size_type>{0};
+  for (auto const& col : input) {
+    if (is_uniform(col)) {
+      if (col.type().id() == type_id::STRING && col.null_count() == 0) { ++string_index; }
+      columns.push_back(uniform_column(col, stream, mr));
+      continue;
+    }
+    if (col.type().id() == type_id::STRING && col.null_count() == 0) {
+      auto const b               = bounds[string_index++];
+      auto const& source_offsets = col.child(strings_column_view::offsets_column_index);
+      auto const type = data_type{b.bytes >= threshold ? type_id::INT64 : type_id::INT32};
+      std::unique_ptr<column> offsets;
+      if (type == source_offsets.type() && b.first == 0) {
+        auto const width = cudf::size_of(type);
+        rmm::device_buffer data(
+          source_offsets.head<char>() +
+            (static_cast<std::size_t>(source_offsets.offset()) + col.offset()) * width,
+          (static_cast<std::size_t>(rows) + 1) * width,
+          stream,
+          mr);
+        offsets = std::make_unique<column>(
+          type,
+          rows + 1,
+          std::move(data),
+          cudf::detail::create_null_mask(0, mask_state::UNALLOCATED, stream, mr),
+          0);
+      } else {
+        offsets = make_numeric_column(type, rows + 1, mask_state::UNALLOCATED, stream, mr);
+        auto src =
+          cudf::detail::offsetalator_factory::make_input_iterator(source_offsets, col.offset());
+        auto dst =
+          cudf::detail::offsetalator_factory::make_output_iterator(offsets->mutable_view());
+        thrust::transform(
+          rmm::exec_policy_nosync(stream, cudf::get_current_device_resource_ref()),
+          indices,
+          indices + rows + 1,
+          dst,
+          [src, first = b.first] __device__(size_type i) { return src[i] - first; });
+      }
+      auto const* chars_begin = b.bytes ? col.head<char>() + b.first : nullptr;
+      rmm::device_buffer chars(chars_begin, b.bytes, stream, mr);
+      columns.push_back(make_strings_column(
+        rows,
+        std::move(offsets),
+        std::move(chars),
+        0,
+        cudf::detail::create_null_mask(0, mask_state::UNALLOCATED, stream, mr)));
+    } else {
+      // Retain the preceding copy path for fixed-width, nullable and nested columns.
+      columns.push_back(std::make_unique<column>(col, stream, mr));
+    }
+  }
+  return std::make_unique<table>(std::move(columns), rows);
 }
 }  // namespace cudf::detail::partition_identity
