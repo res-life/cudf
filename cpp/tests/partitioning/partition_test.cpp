@@ -682,3 +682,35 @@ TYPED_TEST(SingleFixedRankMapTypes, PartialTiles)
     run_partition_test(cudf::table_view{{input}}, map, parts, cudf::table_view{{output}}, offsets);
   }
 }
+
+TEST_F(PartitionTestNotTyped, PartialUniformColumns)
+{
+  constexpr int rows = 1025;
+  std::vector<int32_t> values(rows + 7), bins(rows);
+  std::vector<bool> invalid(rows + 7, false);
+  std::vector<std::string> text(rows + 7), expected;
+  for (int i = 0; i < rows + 7; ++i)
+    text[i] = std::to_string(i);
+  fixed_width_column_wrapper<int32_t> null_numbers(values.begin(), values.end(), invalid.begin());
+  strings_column_wrapper null_text(text.begin(), text.end(), invalid.begin());
+  strings_column_wrapper ids(text.begin(), text.end());
+  auto input = cudf::slice(cudf::table_view{{null_numbers, ids, null_text, ids}}, {7, rows + 7})[0];
+  for (auto const parts : {1, 17}) {
+    expected.clear();
+    std::vector<cudf::size_type> offsets{0};
+    for (int i = 0; i < rows; ++i)
+      bins[i] = i % parts;
+    for (int part = 0; part < parts; ++part) {
+      for (int i = part; i < rows; i += parts)
+        expected.push_back(text[i + 7]);
+      offsets.push_back(expected.size());
+    }
+    strings_column_wrapper output(expected.begin(), expected.end());
+    fixed_width_column_wrapper<int32_t> map(bins.begin(), bins.end());
+    run_partition_test(input,
+                       map,
+                       parts,
+                       cudf::table_view{{input.column(0), output, input.column(2), output}},
+                       offsets);
+  }
+}
