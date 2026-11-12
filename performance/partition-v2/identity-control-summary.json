@@ -1,0 +1,38 @@
+[
+  {
+    "id": "strings-1-17-4-8-32-0-0-0-0",
+    "parent_wall_ms": 0.10901749999999999,
+    "child_wall_ms": 0.0785515,
+    "speedup": 1.3878474631292845
+  },
+  {
+    "id": "strings-1025-1-4-8-32-0-0-0-0",
+    "parent_wall_ms": 0.1033725,
+    "child_wall_ms": 0.08311650000000001,
+    "speedup": 1.243706123332912
+  },
+  {
+    "id": "fixed-1025-1-4-8-32-0-0-0-0",
+    "parent_wall_ms": 0.028416,
+    "child_wall_ms": 0.0307505,
+    "speedup": 0.9240825352433294
+  },
+  {
+    "id": "identity-7",
+    "parent_wall_ms": 0.236935,
+    "child_wall_ms": 0.13089800000000001,
+    "speedup": 1.8100734923375452
+  },
+  {
+    "id": "identity-10",
+    "parent_wall_ms": 0.088417,
+    "child_wall_ms": 0.0782715,
+    "speedup": 1.1296193378177242
+  },
+  {
+    "id": "identity-extra-11",
+    "parent_wall_ms": 0.03245,
+    "child_wall_ms": 0.033171,
+    "speedup": 0.9782641463929336
+  }
+]

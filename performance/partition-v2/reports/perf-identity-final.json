@@ -1,0 +1,416 @@
+{
+  "parent_label": "identity-final-safe09",
+  "child_label": "identity-inline-final",
+  "parent_library_sha256": "9251462cff5275b3a17ed78e382bc8d2c2ed80228d34f2235779f53977008845",
+  "child_library_sha256": "005d78bb87d2e2860243130fe7bc1880ab265b4a186125da225053241ce37720",
+  "fixtures_sha256": "9289fb1d89e3363a735031b7e1197bb248a8b0eacf15c0d939d023cf5470c473",
+  "samples": [
+    51,
+    51
+  ],
+  "groups": {
+    "all": {
+      "cases": 16,
+      "wall_speedup": 1.3351343107150633,
+      "gpu_speedup": 1.3471803943553944,
+      "min_wall_speedup": 0.9954044117647057,
+      "max_wall_speedup": 3.759696199251834
+    },
+    "gather_string_path": {
+      "cases": 0
+    },
+    "controls": {
+      "cases": 16,
+      "wall_speedup": 1.3351343107150633,
+      "gpu_speedup": 1.3471803943553944,
+      "min_wall_speedup": 0.9954044117647057,
+      "max_wall_speedup": 3.759696199251834
+    },
+    "multi_string_all": {
+      "cases": 0
+    },
+    "strings_c2": {
+      "cases": 0
+    },
+    "strings_c3": {
+      "cases": 0
+    },
+    "strings_c4": {
+      "cases": 0
+    },
+    "strings_c10": {
+      "cases": 0
+    }
+  },
+  "flagged": [],
+  "records": [
+    {
+      "id": "identity-0",
+      "fixture": {
+        "kind": "strings_uniform",
+        "rows": 1025,
+        "partitions": 2,
+        "columns": 4,
+        "width": 8,
+        "max_length": 128,
+        "null_percent": 1,
+        "mask": 0,
+        "pattern": 0,
+        "slice": 0
+      },
+      "parent_wall_ms": 0.46433,
+      "child_wall_ms": 0.123502,
+      "parent_gpu_ms": 0.456959993,
+      "child_gpu_ms": 0.116736002,
+      "wall_speedup": 3.759696199251834,
+      "gpu_speedup": 3.914473557180757,
+      "parent_peak_bytes": 220106,
+      "child_peak_bytes": 216804
+    },
+    {
+      "id": "identity-1",
+      "fixture": {
+        "kind": "strings_uniform",
+        "rows": 1000000,
+        "partitions": 2,
+        "columns": 4,
+        "width": 8,
+        "max_length": 128,
+        "null_percent": 1,
+        "mask": 0,
+        "pattern": 0,
+        "slice": 0
+      },
+      "parent_wall_ms": 3.064355,
+      "child_wall_ms": 2.412082,
+      "parent_gpu_ms": 3.05753589,
+      "child_gpu_ms": 2.40214396,
+      "wall_speedup": 1.270419081938342,
+      "gpu_speedup": 1.2728362416713777,
+      "parent_peak_bytes": 212512887,
+      "child_peak_bytes": 208137143
+    },
+    {
+      "id": "identity-2",
+      "fixture": {
+        "kind": "strings_uniform",
+        "rows": 1000000,
+        "partitions": 200,
+        "columns": 10,
+        "width": 8,
+        "max_length": 128,
+        "null_percent": 1,
+        "mask": 0,
+        "pattern": 0,
+        "slice": 0
+      },
+      "parent_wall_ms": 10.045363,
+      "child_wall_ms": 7.698556,
+      "parent_gpu_ms": 10.0378237,
+      "child_gpu_ms": 7.68716812,
+      "wall_speedup": 1.3048372967605872,
+      "gpu_speedup": 1.305789536966703,
+      "parent_peak_bytes": 621373448,
+      "child_peak_bytes": 620126911
+    },
+    {
+      "id": "identity-3",
+      "fixture": {
+        "kind": "strings_uniform",
+        "rows": 1000000,
+        "partitions": 257,
+        "columns": 10,
+        "width": 8,
+        "max_length": 128,
+        "null_percent": 1,
+        "mask": 0,
+        "pattern": 0,
+        "slice": 0
+      },
+      "parent_wall_ms": 11.918203,
+      "child_wall_ms": 11.680891,
+      "parent_gpu_ms": 11.9097605,
+      "child_gpu_ms": 11.672576,
+      "wall_speedup": 1.020316258408712,
+      "gpu_speedup": 1.0203198077271034,
+      "parent_peak_bytes": 660448853,
+      "child_peak_bytes": 656448849
+    },
+    {
+      "id": "identity-4",
+      "fixture": {
+        "kind": "fixed_uniform",
+        "rows": 1000000,
+        "partitions": 2,
+        "columns": 4,
+        "width": 8,
+        "max_length": 128,
+        "null_percent": 1,
+        "mask": 0,
+        "pattern": 0,
+        "slice": 0
+      },
+      "parent_wall_ms": 0.399728,
+      "child_wall_ms": 0.192355,
+      "parent_gpu_ms": 0.39270401,
+      "child_gpu_ms": 0.185343996,
+      "wall_speedup": 2.07807439369915,
+      "gpu_speedup": 2.1187846300670024,
+      "parent_peak_bytes": 36500544,
+      "child_peak_bytes": 32125056
+    },
+    {
+      "id": "identity-5",
+      "fixture": {
+        "kind": "fixed_uniform",
+        "rows": 1000000,
+        "partitions": 256,
+        "columns": 4,
+        "width": 8,
+        "max_length": 128,
+        "null_percent": 1,
+        "mask": 0,
+        "pattern": 0,
+        "slice": 0
+      },
+      "parent_wall_ms": 0.558172,
+      "child_wall_ms": 0.228025,
+      "parent_gpu_ms": 0.551775992,
+      "child_gpu_ms": 0.221184,
+      "wall_speedup": 2.447854401929613,
+      "gpu_speedup": 2.49464695457176,
+      "parent_peak_bytes": 36500544,
+      "child_peak_bytes": 32125056
+    },
+    {
+      "id": "identity-6",
+      "fixture": {
+        "kind": "strings",
+        "rows": 1000000,
+        "partitions": 1,
+        "columns": 10,
+        "width": 8,
+        "max_length": 128,
+        "null_percent": 0,
+        "mask": 0,
+        "pattern": 0,
+        "slice": 0
+      },
+      "parent_wall_ms": 6.09239,
+      "child_wall_ms": 5.945673,
+      "parent_gpu_ms": 6.08358383,
+      "child_gpu_ms": 5.93510389,
+      "wall_speedup": 1.0246762645708904,
+      "gpu_speedup": 1.0250172436324447,
+      "parent_peak_bytes": 680134725,
+      "child_peak_bytes": 680134725
+    },
+    {
+      "id": "identity-7",
+      "fixture": {
+        "kind": "strings",
+        "rows": 1025,
+        "partitions": 1,
+        "columns": 10,
+        "width": 8,
+        "max_length": 128,
+        "null_percent": 0,
+        "mask": 0,
+        "pattern": 0,
+        "slice": 0
+      },
+      "parent_wall_ms": 0.246215,
+      "child_wall_ms": 0.143493,
+      "parent_gpu_ms": 0.239616007,
+      "child_gpu_ms": 0.136191994,
+      "wall_speedup": 1.7158676729875324,
+      "gpu_speedup": 1.7593986251497278,
+      "parent_peak_bytes": 695983,
+      "child_peak_bytes": 695983
+    },
+    {
+      "id": "identity-8",
+      "fixture": {
+        "kind": "mixed",
+        "rows": 1000000,
+        "partitions": 1,
+        "columns": 4,
+        "width": 8,
+        "max_length": 128,
+        "null_percent": 10,
+        "mask": 0,
+        "pattern": 0,
+        "slice": 0
+      },
+      "parent_wall_ms": 0.813008,
+      "child_wall_ms": 0.813247,
+      "parent_gpu_ms": 0.804863989,
+      "child_gpu_ms": 0.804863989,
+      "wall_speedup": 0.9997061163459563,
+      "gpu_speedup": 1.0,
+      "parent_peak_bytes": 86089847,
+      "child_peak_bytes": 86089847
+    },
+    {
+      "id": "identity-9",
+      "fixture": {
+        "kind": "lists",
+        "rows": 1025,
+        "partitions": 1,
+        "columns": 2,
+        "width": 8,
+        "max_length": 128,
+        "null_percent": 10,
+        "mask": 0,
+        "pattern": 0,
+        "slice": 0
+      },
+      "parent_wall_ms": 0.146254,
+      "child_wall_ms": 0.141713,
+      "parent_gpu_ms": 0.139264002,
+      "child_gpu_ms": 0.135104001,
+      "wall_speedup": 1.0320436374926787,
+      "gpu_speedup": 1.030791101441918,
+      "parent_peak_bytes": 24992,
+      "child_peak_bytes": 24992
+    },
+    {
+      "id": "identity-10",
+      "fixture": {
+        "kind": "structs",
+        "rows": 1025,
+        "partitions": 1,
+        "columns": 2,
+        "width": 8,
+        "max_length": 128,
+        "null_percent": 10,
+        "mask": 0,
+        "pattern": 0,
+        "slice": 0
+      },
+      "parent_wall_ms": 0.126122,
+      "child_wall_ms": 0.077052,
+      "parent_gpu_ms": 0.117760003,
+      "child_gpu_ms": 0.0706560016,
+      "wall_speedup": 1.6368426517157246,
+      "gpu_speedup": 1.6666666713843596,
+      "parent_peak_bytes": 16784,
+      "child_peak_bytes": 16784
+    },
+    {
+      "id": "identity-extra-11",
+      "fixture": {
+        "kind": "strings",
+        "rows": 1025,
+        "partitions": 1,
+        "columns": 1,
+        "width": 8,
+        "max_length": 128,
+        "null_percent": 0,
+        "mask": 0,
+        "pattern": 0,
+        "slice": 0
+      },
+      "parent_wall_ms": 0.03249,
+      "child_wall_ms": 0.03264,
+      "parent_gpu_ms": 0.0265599992,
+      "child_gpu_ms": 0.0266239997,
+      "wall_speedup": 0.9954044117647057,
+      "gpu_speedup": 0.9975961350390189,
+      "parent_peak_bytes": 70644,
+      "child_peak_bytes": 70644
+    },
+    {
+      "id": "identity-extra-12",
+      "fixture": {
+        "kind": "strings",
+        "rows": 1000000,
+        "partitions": 1,
+        "columns": 1,
+        "width": 8,
+        "max_length": 128,
+        "null_percent": 0,
+        "mask": 0,
+        "pattern": 0,
+        "slice": 0
+      },
+      "parent_wall_ms": 0.617143,
+      "child_wall_ms": 0.615853,
+      "parent_gpu_ms": 0.60927999,
+      "child_gpu_ms": 0.608255982,
+      "wall_speedup": 1.0020946557051764,
+      "gpu_speedup": 1.0016835148856786,
+      "parent_peak_bytes": 68013257,
+      "child_peak_bytes": 68013257
+    },
+    {
+      "id": "identity-extra-13",
+      "fixture": {
+        "kind": "strings",
+        "rows": 1025,
+        "partitions": 1,
+        "columns": 2,
+        "width": 8,
+        "max_length": 128,
+        "null_percent": 0,
+        "mask": 0,
+        "pattern": 0,
+        "slice": 0
+      },
+      "parent_wall_ms": 0.054892,
+      "child_wall_ms": 0.051451,
+      "parent_gpu_ms": 0.048928,
+      "child_gpu_ms": 0.0450560004,
+      "wall_speedup": 1.0668791665856836,
+      "gpu_speedup": 1.0859374903592198,
+      "parent_peak_bytes": 141019,
+      "child_peak_bytes": 141019
+    },
+    {
+      "id": "identity-extra-14",
+      "fixture": {
+        "kind": "strings",
+        "rows": 1000000,
+        "partitions": 1,
+        "columns": 2,
+        "width": 8,
+        "max_length": 128,
+        "null_percent": 10,
+        "mask": 0,
+        "pattern": 0,
+        "slice": 0
+      },
+      "parent_wall_ms": 1.170695,
+      "child_wall_ms": 1.169174,
+      "parent_gpu_ms": 1.16342402,
+      "child_gpu_ms": 1.16230404,
+      "wall_speedup": 1.001300918426171,
+      "gpu_speedup": 1.0009635860854444,
+      "parent_peak_bytes": 123441119,
+      "child_peak_bytes": 123441119
+    },
+    {
+      "id": "identity-extra-15",
+      "fixture": {
+        "kind": "mixed",
+        "rows": 1025,
+        "partitions": 1,
+        "columns": 4,
+        "width": 8,
+        "max_length": 128,
+        "null_percent": 0,
+        "mask": 0,
+        "pattern": 0,
+        "slice": 0
+      },
+      "parent_wall_ms": 0.046601,
+      "child_wall_ms": 0.046781,
+      "parent_gpu_ms": 0.040736001,
+      "child_gpu_ms": 0.0408639982,
+      "wall_speedup": 0.996152284046942,
+      "gpu_speedup": 0.9968677269567813,
+      "parent_peak_bytes": 94975,
+      "child_peak_bytes": 94975
+    }
+  ]
+}

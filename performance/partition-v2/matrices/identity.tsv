@@ -1,0 +1,16 @@
+identity-0	strings_uniform	1025	2	4	8	128	1	0	0	0
+identity-1	strings_uniform	1000000	2	4	8	128	1	0	0	0
+identity-2	strings_uniform	1000000	200	10	8	128	1	0	0	0
+identity-3	strings_uniform	1000000	257	10	8	128	1	0	0	0
+identity-4	fixed_uniform	1000000	2	4	8	128	1	0	0	0
+identity-5	fixed_uniform	1000000	256	4	8	128	1	0	0	0
+identity-6	strings	1000000	1	10	8	128	0	0	0	0
+identity-7	strings	1025	1	10	8	128	0	0	0	0
+identity-8	mixed	1000000	1	4	8	128	10	0	0	0
+identity-9	lists	1025	1	2	8	128	10	0	0	0
+identity-10	structs	1025	1	2	8	128	10	0	0	0
+identity-extra-11	strings	1025	1	1	8	128	0	0	0	0
+identity-extra-12	strings	1000000	1	1	8	128	0	0	0	0
+identity-extra-13	strings	1025	1	2	8	128	0	0	0	0
+identity-extra-14	strings	1000000	1	2	8	128	10	0	0	0
+identity-extra-15	mixed	1025	1	4	8	128	0	0	0	0

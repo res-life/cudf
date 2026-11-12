@@ -1,0 +1,37 @@
+{
+  "kernel_parity": {
+    "partition_string_copy.cuh:copy_vector": true,
+    "partition_string_copy.cuh:copy_group": true,
+    "partition_string_copy.cuh:copy_characters": true,
+    "partition_string_plan.cuh:copy_recomputed": true,
+    "partition_string_plan.cuh:scatter_ranked_sizes": true,
+    "partition_string_plan.cuh:copy_ranked": true,
+    "partition_strings.cuh:invert_partition_map": true,
+    "partition_strings.cuh:partition_string_sizes": true,
+    "partition_strings.cuh:gather_partition_strings": true,
+    "partition_map_warp_histogram": true,
+    "partition_map_local_ranks": true,
+    "partition_map_gather_counts": true,
+    "partition_map_gather_scatter": true,
+    "make_partition_gather_map": true,
+    "partition_map_scatter": true,
+    "scatter_with_block_ranks": true,
+    "partition_with_block_ranks": true,
+    "make_map_partition_offsets": true,
+    "partition_identity.cuh:read_bounds": true
+  },
+  "intentional_host_differences": [
+    "Preserve the existing gather map when specialized STRING allocation is declined instead of constructing a second map.",
+    "Keep the preceding path for small-column-count binary STRING plans when a lower output-offset threshold is explicitly configured.",
+    "Batch identity copies only for at least two non-null STRING columns; retain preceding table/column copies for other schemas."
+  ],
+  "whole_headers": {
+    "partition_fixed_width.cuh": true,
+    "partition_identity.cuh": false
+  },
+  "additional_device_code_audit": {
+    "shared": 577,
+    "identical": 577,
+    "different": []
+  }
+}

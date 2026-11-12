@@ -1,0 +1,92 @@
+{
+  "1": {
+    "branch": "stack/partition-v2-01-policy",
+    "base": "main",
+    "title": "Centralize partition policy and fast-path trivial inputs",
+    "sha": "13a6aeb2a849536ae7d41e80c931dfdbd852bc03",
+    "production_lines": 230,
+    "variant": "s01",
+    "feature": 1
+  },
+  "2": {
+    "branch": "stack/partition-v2-02-batched-strings",
+    "base": "stack/partition-v2-01-policy",
+    "title": "Batch multi-column STRING materialization in partition",
+    "sha": "30b510f810ed78d2024b3780d07b5cff30df0368",
+    "production_lines": 297,
+    "variant": "s02",
+    "feature": 2
+  },
+  "3": {
+    "branch": "stack/partition-v2-03-string-ranks",
+    "base": "stack/partition-v2-02-batched-strings",
+    "title": "Build multi-column STRING gather maps with binary and tile ranks",
+    "sha": "7abda7e759421f545b300cf7cb8e8bd09a9b03ff",
+    "production_lines": 286,
+    "variant": "s03",
+    "feature": 3
+  },
+  "4": {
+    "branch": "stack/partition-v2-04-binary-string-sizes",
+    "base": "stack/partition-v2-03-string-ranks",
+    "title": "Fuse binary STRING sizes and pack large multi-column ranks",
+    "sha": "2790608aa81dc527b5c4210e665be52b1e1216b2",
+    "production_lines": 299,
+    "variant": "safe04",
+    "feature": 4
+  },
+  "5": {
+    "branch": "stack/partition-v2-05-direct-fixed-width",
+    "base": "stack/partition-v2-04-binary-string-sizes",
+    "title": "Materialize fixed-width partition output directly",
+    "sha": "7a7bde74547fb5de15d6bf7cc939f0469493c59a",
+    "production_lines": 285,
+    "variant": "priority05-fixed",
+    "feature": 6
+  },
+  "6": {
+    "branch": "stack/partition-v2-06-reordered-fixed-width",
+    "base": "stack/partition-v2-05-direct-fixed-width",
+    "title": "Reorder fixed-width writes using the existing partition policy",
+    "sha": "92f0dd516bce2aadad765af5a90d2f7efb644384",
+    "production_lines": 56,
+    "variant": "priority06-reordered",
+    "feature": 7
+  },
+  "7": {
+    "branch": "stack/partition-v2-07-mapless-single-string",
+    "base": "stack/partition-v2-06-reordered-fixed-width",
+    "title": "Recompute large single-column STRING targets without a row map",
+    "sha": "39af948e7be1de73bd19ee2cd094fd56c5c999eb",
+    "production_lines": 103,
+    "variant": "safe07",
+    "feature": 5
+  },
+  "8": {
+    "branch": "stack/partition-v2-08-generic-rank-gather",
+    "base": "stack/partition-v2-07-mapless-single-string",
+    "title": "Use tile-rank gather fallbacks for remaining partition schemas",
+    "sha": "5f1daa873591dc095081463cf708dd296b7fe1fb",
+    "production_lines": 221,
+    "variant": "safe08",
+    "feature": 8
+  },
+  "9": {
+    "branch": "stack/partition-v2-09-single-fixed-ranks",
+    "base": "stack/partition-v2-08-generic-rank-gather",
+    "title": "Scatter single fixed-width fallback output with saved tile ranks",
+    "sha": "c10722c97d53cf68454a5c146e4584a9290364f2",
+    "production_lines": 165,
+    "variant": "safe09",
+    "feature": 9
+  },
+  "10": {
+    "branch": "stack/partition-v2-10-identity-uniform-columns",
+    "base": "stack/partition-v2-09-single-fixed-ranks",
+    "title": "Batch identity STRING copies and omit uniform columns",
+    "sha": "bdea6e1f97406123480da929ec1761debf5a996c",
+    "production_lines": 161,
+    "variant": "identity-inline",
+    "feature": 10
+  }
+}
