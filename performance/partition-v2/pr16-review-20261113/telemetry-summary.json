@@ -1,0 +1,114 @@
+{
+  "primary/parent/fixed-1000000-2-1-16-32-0-0-0-0": {
+    "windows": 32,
+    "covered_windows": 32,
+    "sm_mhz_observations": {
+      "2040": 32
+    },
+    "memory_mhz_observations": {
+      "6251": 32
+    }
+  },
+  "primary/parent/fixed-1000000-2-2-8-32-0-0-2-0": {
+    "windows": 32,
+    "covered_windows": 32,
+    "sm_mhz_observations": {
+      "2040": 32
+    },
+    "memory_mhz_observations": {
+      "6251": 32
+    }
+  },
+  "primary/candidate/fixed-1000000-2-1-16-32-0-0-0-0": {
+    "windows": 32,
+    "covered_windows": 32,
+    "sm_mhz_observations": {
+      "2040": 32
+    },
+    "memory_mhz_observations": {
+      "6251": 32
+    }
+  },
+  "primary/candidate/fixed-1000000-2-2-8-32-0-0-2-0": {
+    "windows": 32,
+    "covered_windows": 31,
+    "sm_mhz_observations": {
+      "2040": 31
+    },
+    "memory_mhz_observations": {
+      "6251": 31
+    }
+  },
+  "controls/parent/fixed-1000000-2-1-16-32-0-0-0-0": {
+    "windows": 8,
+    "covered_windows": 8,
+    "sm_mhz_observations": {
+      "2040": 8
+    },
+    "memory_mhz_observations": {
+      "6251": 8
+    }
+  },
+  "controls/parent/fixed-1000000-2-2-8-32-0-0-2-0": {
+    "windows": 8,
+    "covered_windows": 8,
+    "sm_mhz_observations": {
+      "2040": 8
+    },
+    "memory_mhz_observations": {
+      "6251": 8
+    }
+  },
+  "controls/parent/fixed-1000000-2-1-8-32-0-0-0-0": {
+    "windows": 8,
+    "covered_windows": 0,
+    "sm_mhz_observations": {},
+    "memory_mhz_observations": {}
+  },
+  "controls/parent/fixed-1000000-3-1-16-32-0-0-0-0": {
+    "windows": 8,
+    "covered_windows": 7,
+    "sm_mhz_observations": {
+      "2040": 7
+    },
+    "memory_mhz_observations": {
+      "6251": 7
+    }
+  },
+  "controls/candidate/fixed-1000000-2-1-16-32-0-0-0-0": {
+    "windows": 8,
+    "covered_windows": 8,
+    "sm_mhz_observations": {
+      "2040": 8
+    },
+    "memory_mhz_observations": {
+      "6251": 8
+    }
+  },
+  "controls/candidate/fixed-1000000-2-2-8-32-0-0-2-0": {
+    "windows": 8,
+    "covered_windows": 8,
+    "sm_mhz_observations": {
+      "2040": 8
+    },
+    "memory_mhz_observations": {
+      "6251": 8
+    }
+  },
+  "controls/candidate/fixed-1000000-2-1-8-32-0-0-0-0": {
+    "windows": 8,
+    "covered_windows": 0,
+    "sm_mhz_observations": {},
+    "memory_mhz_observations": {}
+  },
+  "controls/candidate/fixed-1000000-3-1-16-32-0-0-0-0": {
+    "windows": 8,
+    "covered_windows": 7,
+    "sm_mhz_observations": {
+      "2040": 7
+    },
+    "memory_mhz_observations": {
+      "6251": 7
+    }
+  }
+}

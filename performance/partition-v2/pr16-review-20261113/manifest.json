@@ -1,0 +1,32 @@
+{
+  "parent": {
+    "sha": "39b6dcf0ea66a53b0721341bfefe0f5356286c6f",
+    "variant": "pr16-parent-20261113",
+    "source_sha256": {
+      "cpp/src/partitioning/partition_fixed_width.cuh": "4eab84c414ea0eade067492ba2dadbf5b4f3178113f36ed4748627a2c32cfc41",
+      "cpp/src/partitioning/partition_identity.cuh": "60cb39cbf98d510c0a381b2e5164f676b2bb70e8158c5edcc62dcef08d493572",
+      "cpp/src/partitioning/partition_map_plan.cuh": "ea07d1f32c93ac40bc4043872b7c370992311af2fc1279b8f727cded3cc63301",
+      "cpp/src/partitioning/partition_policy.hpp": "88698ad7227aa7e61920fb3ac9b1a4919b49ea6a765491dc8aedab78201f9892",
+      "cpp/src/partitioning/partition_string_copy.cuh": "8d1df07a53186bee5baeedc3276480057fcf7d4dde7f027746e9d74729075528",
+      "cpp/src/partitioning/partition_string_plan.cuh": "99a83509bd1334c1d0f5f75e5ae31571cc28c0eeb8505f1ba51c8d772e323a26",
+      "cpp/src/partitioning/partition_strings.cuh": "10aef77460968c7fc72b990465cd5b2c411a31a6fa34a0646a7dc0f6f44c5d7f",
+      "cpp/src/partitioning/partitioning.cu": "4becade1fcc6c242e41681eb9bad99aa90f9000fb599d9386dc22ccd6cb5f2ae",
+      "cpp/src/partitioning/round_robin.cu": "4280d97174359bbcb0f09aad3af6ea52835ec3880010e46670a45d5eaedb75d6"
+    }
+  },
+  "candidate": {
+    "sha": "250fdcc6b207542652807251ef5ff994110ba711",
+    "variant": "pr16-candidate-20261113",
+    "source_sha256": {
+      "cpp/src/partitioning/partition_fixed_width.cuh": "4eab84c414ea0eade067492ba2dadbf5b4f3178113f36ed4748627a2c32cfc41",
+      "cpp/src/partitioning/partition_identity.cuh": "60cb39cbf98d510c0a381b2e5164f676b2bb70e8158c5edcc62dcef08d493572",
+      "cpp/src/partitioning/partition_map_plan.cuh": "ea07d1f32c93ac40bc4043872b7c370992311af2fc1279b8f727cded3cc63301",
+      "cpp/src/partitioning/partition_policy.hpp": "88698ad7227aa7e61920fb3ac9b1a4919b49ea6a765491dc8aedab78201f9892",
+      "cpp/src/partitioning/partition_string_copy.cuh": "8d1df07a53186bee5baeedc3276480057fcf7d4dde7f027746e9d74729075528",
+      "cpp/src/partitioning/partition_string_plan.cuh": "99a83509bd1334c1d0f5f75e5ae31571cc28c0eeb8505f1ba51c8d772e323a26",
+      "cpp/src/partitioning/partition_strings.cuh": "10aef77460968c7fc72b990465cd5b2c411a31a6fa34a0646a7dc0f6f44c5d7f",
+      "cpp/src/partitioning/partitioning.cu": "6e73813cd84515bbef6a282f6a3092e5134c765aba1c055f9e2d4aa2763711cc",
+      "cpp/src/partitioning/round_robin.cu": "4280d97174359bbcb0f09aad3af6ea52835ec3880010e46670a45d5eaedb75d6"
+    }
+  }
+}

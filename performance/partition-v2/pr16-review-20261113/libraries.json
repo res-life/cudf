@@ -1,0 +1,10 @@
+{
+  "candidate": {
+    "sha256": "1e28e52d66f4dd3926bc040cb4998e84b9e3cb80895990608f2de476498214be",
+    "source_sha": "250fdcc6b207542652807251ef5ff994110ba711"
+  },
+  "parent": {
+    "sha256": "52f73a0390537819858bc74011d79a179e938f4c49f549249faacf10326c5c05",
+    "source_sha": "39b6dcf0ea66a53b0721341bfefe0f5356286c6f"
+  }
+}
