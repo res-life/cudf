@@ -1,0 +1,82 @@
+{
+  "primary/parent/fixed-1000000-2-1-16-32-0-0-0-0": {
+    "windows": 24,
+    "covered_windows": 24,
+    "sm_mhz_observations": {
+      "2040": 24
+    },
+    "memory_mhz_observations": {
+      "6251": 24
+    }
+  },
+  "primary/parent/fixed-1000000-2-2-8-32-0-0-2-0": {
+    "windows": 24,
+    "covered_windows": 24,
+    "sm_mhz_observations": {
+      "2040": 24
+    },
+    "memory_mhz_observations": {
+      "6251": 24
+    }
+  },
+  "aa-candidate/candidate/fixed-1000000-2-1-16-32-0-0-0-0": {
+    "windows": 24,
+    "covered_windows": 24,
+    "sm_mhz_observations": {
+      "2040": 24
+    },
+    "memory_mhz_observations": {
+      "6251": 24
+    }
+  },
+  "aa-candidate/candidate/fixed-1000000-2-2-8-32-0-0-2-0": {
+    "windows": 24,
+    "covered_windows": 24,
+    "sm_mhz_observations": {
+      "2040": 24
+    },
+    "memory_mhz_observations": {
+      "6251": 24
+    }
+  },
+  "primary/candidate/fixed-1000000-2-1-16-32-0-0-0-0": {
+    "windows": 24,
+    "covered_windows": 24,
+    "sm_mhz_observations": {
+      "2040": 24
+    },
+    "memory_mhz_observations": {
+      "6251": 24
+    }
+  },
+  "primary/candidate/fixed-1000000-2-2-8-32-0-0-2-0": {
+    "windows": 24,
+    "covered_windows": 24,
+    "sm_mhz_observations": {
+      "2040": 24
+    },
+    "memory_mhz_observations": {
+      "6251": 24
+    }
+  },
+  "aa-parent/parent/fixed-1000000-2-1-16-32-0-0-0-0": {
+    "windows": 24,
+    "covered_windows": 24,
+    "sm_mhz_observations": {
+      "2040": 24
+    },
+    "memory_mhz_observations": {
+      "6251": 24
+    }
+  },
+  "aa-parent/parent/fixed-1000000-2-2-8-32-0-0-2-0": {
+    "windows": 24,
+    "covered_windows": 24,
+    "sm_mhz_observations": {
+      "2040": 24
+    },
+    "memory_mhz_observations": {
+      "6251": 24
+    }
+  }
+}
